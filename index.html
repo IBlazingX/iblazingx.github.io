@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+    <style>
+        *:not(.day-input .input, .modal input) {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            user-select: none !important;
+        }
+        .day-input .input,
+        .modal input {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            user-select: text !important;
+        }
+
+        .day-input .input {
+            all: unset;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all .5s;
+        }
+        .day-input .input[blx-valid="true"] { color: var(--bs-light); }
+        .day-input .input[blx-valid="false"] { color: var(--bs-secondary); }
+        .day-input .input[blx-valid="true"]:focus { color: var(--bs-success); }
+        .day-input .input[blx-valid="false"]:focus { color: var(--bs-danger); }
+
+        #day-input .input { background: rgba(255, 255, 255, .03); }
+        #day-input .input:hover,
+        #day-input .input:focus { background: rgba(255, 255, 255, 0); }
+        #day-input .input[blx-valid="true"] { color: var(--bs-success); }
+        #day-input .input[blx-valid="false"] { color: var(--bs-danger); }
+
+        [blx-day] #main:not(.intransition) { transition: background .3s !important; }
+        [blx-day] #main:not(.intransition):has(*:focus) {
+            --bs-bg-opacity: .4 !important;
+            transition: background .5s !important;
+        }
+
+        [blx-config-input]:focus:valid { color: var(--bs-success); }
+        [blx-config-input]:focus:invalid { color: var(--bs-danger); }
+    </style>
+</head>
+<body data-bs-theme="dark" class="p-2 d-flex flex-column gap-2 overflow-hidden font-monospace" style="width: 100dvw; height: 100dvh;">
+
+    <div id="day-input" class="day-input container-fluid position-relative bg-black rounded-3 d-flex p-2 ps-3 gap-3 justify-content-between align-items-center text-center" style="--bs-bg-opacity: .3;">
+        <span>
+            De
+        </span>
+        <input type="text" class="input rounded-3 py-1 px-2 from" placeholder="20:00">
+        <span>
+            a
+        </span>
+        <input type="text" class="input rounded-3 py-1 px-2 to" placeholder="02:00">
+        <button class="btn btn-success disabled rounded-3">
+            <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12.5 21h-6.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v5" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M16 19h6" /><path d="M19 16v6" /></svg>
+        </button>
+    </div>
+
+    <!-- Contenedor Principal -->
+    <div class="container-fluid bg-black p-0 rounded-3 flex-grow-1 d-flex flex-column position-relative overflow-hidden" style="--bs-bg-opacity: .3;">
+        <!-- Lista de días -->
+        <div class="container-fluid flex-grow-1 d-flex flex-column p-0 py-2 overflow-hidden">
+            <div class="container-fluid p-0 overflow-auto overflow-x-hidden" style="font-size: .65rem;">
+                <div id="day-list" class="container-fluid d-flex flex-column gap-1 p-2 py-0">
+                </div>
+            </div>
+        </div>
+        <!-- #TODO# Hacer una barrita del color de sumarry pero mas oscuro que muestre el total de las horas trabajadas -->
+         <!-- Ingresos Totales -->
+        <div id="summary" class="container-fluid p-2 py-1 bg-success" style="font-size: .7rem;">
+            <div class="row">
+                <div class="col">
+                    Total Nominal:<br>
+                    Descuentos (<span blx-target="config.totalDiscount"></span>%):
+                </div>
+                <div class="col text-end">
+                    <span blx-target="summary-nominalTotal"></span><br>
+                    <span blx-target="summary-discountTotal"></span>
+                </div>
+            </div>
+            <hr class="p-0 my-1 mb-2">
+            <div class="row">
+                <div class="col">
+                    Total Líquido:
+                </div>
+                <div class="col text-end">
+                    $<span blx-target="summary-liquidTotal"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Navegación -->
+    <div id="navbar" class="container-fluid d-flex p-0 gap-2">
+        <button id="help" class="btn btn-success container-fluid rounded-3 disabled">
+            <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-help"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 17l0 .01" /><path d="M12 13.5a1.5 1.5 0 0 1 1 -1.5a2.6 2.6 0 1 0 -3 -4" /></svg>
+        </button>
+        <button id="load" class="btn btn-success container-fluid rounded-3 disabled">
+            <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-book-upload"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 20h-8a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12v5" /><path d="M11 16h-5a2 2 0 0 0 -2 2" /><path d="M15 16l3 -3l3 3" /><path d="M18 13v9" /></svg>
+        </button>
+        <button id="undo" class="btn btn-success container-fluid rounded-3 disabled">
+            <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-back"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 11l-4 4l4 4m-4 -4h11a4 4 0 0 0 0 -8h-1" /></svg>
+        </button>
+        <button id="save" class="btn btn-success container-fluid rounded-3 disabled">
+            <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-book-download"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 20h-6a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12v5" /><path d="M13 16h-7a2 2 0 0 0 -2 2" /><path d="M15 19l3 3l3 -3" /><path d="M18 22v-9" /></svg>
+        </button>
+        <button id="config" class="btn btn-success container-fluid rounded-3 disabled">
+            <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-settings"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
+        </button>
+    </div>
+
+    <!-- Modal -->
+    <button id="modal-btn" type="button" data-bs-toggle="modal" data-bs-target="#modal" style="display: none !important;"></button>
+      
+    <div id="modal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" ></div>
+
+    <!-- Script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script>
+        // Variables <-----------------------------------------------------------------------------------
+        const config = {
+            normalHourPrice: 165.98, // Editable by User
+            nocturnalHourPrice: 207.48, // Editable by User
+            totalDiscount: 18.1, // Editable by User
+            dayInputDelay: 100, // Editable by Admin
+            maxDecimalDigits: 2, // Editable by Admin
+            modalAutoCloseDelay: 5000, // Editable by User
+            fileLoadCheckDelay: 500, // Editable by Admin
+            enableConfirmButtonDelay: 3000, // Editable by User
+            nocturnalTimeStart: '22:00', // Editable by User
+            nocturnalTimeEnd: '06:00', // Editable by User
+            extraHourMultiplier: 2, // Editable by User
+        }
+        const deletedDays = []
+        let unsavedChanges = false
+        let adminMode = false
+        let dayIndex = 0
+
+        // Functions <-----------------------------------------------------------------------------------
+        // Utility functions
+            function isNumber(input, onlyInteger) {
+                let exp = new RegExp('^\-?[0-9]+(\.[0-9]+)?$')
+
+                if (onlyInteger == true) {
+                    exp = new RegExp('^\-?[0-9]+$')
+                }
+
+                return exp.test(String(input).trim())
+            }
+
+            function toNumber(input, def, onlyInteger) {
+                input = String(input).trim()
+                input = isNumber(input) ? Number(input) : Number(isNumber(def) ? def : 0)
+
+                if (onlyInteger == true) return parseInt(input)
+                return input
+            }
+
+            function elFomStr(str) {
+                let el = document.createElement('div')
+                el.innerHTML = String(str).trim()
+
+                return el.firstChild
+            }
+
+            function loadFile(file) {
+                let el = elFomStr(`<input id="load-file" type="file" accept=".txt" multiple="false" style="display: none;">`)
+
+                document.body.append(el)
+                
+                $(window).one('focus', function(e) {
+                    $(el).attr('blx-window-focused', setTimeout(check, config.fileLoadCheckDelay))
+                })
+
+                $(el).one('input', check).click()
+
+                // function
+                function check() {
+                    clearTimeout($(el).attr('blx-window-focused'))
+
+                    try {
+                        if (!el.files.length) return loadJournalFile(false, 'No se pudo cargar el archivo de la jornada debido a que no se subio tal archivo')
+                        
+                        let file = el.files[0]
+                        let reader = new FileReader()
+
+                        reader.onload = function (evt) {
+                            loadJournalFile(false, null, evt.target.result)
+                        }
+
+                        reader.readAsText(file, 'UTF-8')
+                    } catch (err) {
+                        loadJournalFile(false, 'No se pudo cargar el archivo de la jornada debido a un error inesperado')
+                    }
+
+                    el.remove()
+                }
+            }
+
+            function saveFile(name, content) {
+                let el = elFomStr(`<a href="data:text/plain;charset=utf-8,${encodeURIComponent(content)}" download="${name}" style="display: none;"></a>`)
+                
+                document.body.append(el)
+                el.click()
+                el.remove()
+                unsavedChanges = false
+            }
+
+        // Events specific
+            function isValid(str) {
+                let arr = str.split(':').map(val => toNumber(val, -1))
+
+                if (!arr.length) return false
+                if (arr.length >= 1 && (arr[0] < 0 || arr[0] > 24)) return false
+                if (arr.length >= 2 && (arr[1] < 0 || arr[1] > 59)) return false
+                
+                return true
+            }
+
+            function parseStringTime(str) {
+                let arr = str.split(':')
+
+                return [toNumber(arr[0], null, true) % 24, toNumber(arr[1], null, true)]
+            }
+
+            function parseArrTime(arr) {
+                return arr.map(val => String(val).padStart(2, '0')).join(':')
+            }
+
+            function appendDay(from, to, index, holiday, expanded) {
+                // #TODO#
+                /* actualizar funciones de actualización correspondientes
+                    y añadir una opción para alternar entre si fue en un día feriado o no
+
+                    DATO:
+                    hora normal = x1 (recargo de 0%)
+                    hora feriado = x2 (recargo de 100%)
+                    hora extra = x2 (recargo de 100%)
+                    hora extra feriado = x2.5 (recargo 150%)
+                */
+                from = parseStringTime(from)
+                to = parseStringTime(to)
+                index = toNumber(index, -1, true)
+
+                let list = $('#day-list')
+                let journal = getJournal(from, to)
+                let elIndex = index < 0 ? dayIndex++ + 1 : index
+                let el
+                
+                el = $(elFomStr(`<div blx-day="${elIndex}" blx-journal="${journal.from}-${journal.to}" blx-holiday="${holiday == 'true' ? 'true' : 'false'}" class="day-input container-fluid position-relative p-0 overflow-hidden">
+                    <i id="icon" class="ti ti-trash text-danger p-2 pe-3 fs-3 position-absolute" style="z-index: -1; opacity: 0; top: 50%; left: 0; transition: -100% -50%"></i>
+                    <div id="main" class="container-fluid overflow-hidden bg-black rounded-3 d-flex flex-column p-0" style="--bs-bg-opacity: .2; backdrop-filter: opacity(0);">
+                        <div class="container-fluid d-flex p-0">
+                            <div class="container-fluid d-flex gap-3 p-2 px-0 ps-3 justify-content-between align-items-center text-center">
+                                <span>
+                                    De
+                                </span>
+                                <input type="text" class="input rounded-3 py-1 px-2 from" placeholder="20:00">
+                                <span>
+                                    a
+                                </span>
+                                <input type="text" class="input rounded-3 py-1 px-2 to" placeholder="02:00">
+                            </div>
+                            <i class="ti ti-caret-down-filled fs-5 p-2 m-auto" data-bs-toggle="collapse" data-bs-target="[blx-day='${elIndex}'] .collapse"></i>
+                        </div>
+                        <div class="collapse p-2 pt-0 ${expanded == 'true' ? 'show' : ''}">
+                            <hr class="p-0 mt-0 mb-2">
+                            <div blx-target="details" class="container-fluid p-0">
+                            </div>
+                        </div>
+                    </div>
+                </div>`))
+
+                el.find('#main').on({
+                    'touchstart mousedown': function(e) {
+                        const el = $(this)
+                        const icon = el.parent().find('#icon')
+
+                        el.attr('blx-slide', true)
+                        el.attr('blx-slide-x', (e.touches ? e.touches[0] : e).clientX)
+                        el.attr('blx-slide-mw', el.parent().outerWidth())
+                        el.attr('blx-slide-mdx', icon.outerWidth())
+                    },
+                    'touchmove mousemove': function(e) {
+                        const el = $(this)
+                        const icon = el.parent().find('#icon')
+                        const transition = 'all .1s ease'
+                        const mult = .25
+
+                        if (el.attr('blx-slide') != 'true') return
+
+                        document.getSelection().removeAllRanges()
+
+                        el.attr('blx-slide-dx', Math.max(
+                            toNumber(el.attr('blx-slide-mdx')) * -1,
+                            Math.min(
+                                (e.touches ? e.touches[0] : e).clientX - toNumber(el.attr('blx-slide-x')),
+                                toNumber(el.attr('blx-slide-mdx'))
+                            )
+                        ))
+
+                        icon.css({
+                            'transition': 'all 0s',
+                            'left': toNumber(el.attr('blx-slide-dx')) < 0 ? '100%' : '0%',
+                            'translate': `${toNumber(el.attr('blx-slide-dx')) < 0 ? `${toNumber(el.attr('blx-slide-dx'))}px -50%` : `${toNumber(el.attr('blx-slide-dx')) - toNumber(el.attr('blx-slide-mdx'))}px`} -50%`
+                        })
+
+                        icon.css({
+                            'transition': transition,
+                            'opacity': `${Math.abs(toNumber(el.attr('blx-slide-dx'))) * 1 / toNumber(el.attr('blx-slide-mdx'))}`,
+                        })
+                        
+                        el.css({
+                            'transition': transition,
+                            'opacity': `${((toNumber(el.attr('blx-slide-mw')) * mult) - Math.abs(toNumber(el.attr('blx-slide-dx')))) * 1 / (toNumber(el.attr('blx-slide-mw')) * mult)}`,
+                            'translate': `${el.attr('blx-slide-dx')}px 0`
+                        })
+
+                        if (Math.abs(toNumber(el.attr('blx-slide-dx'))) >= toNumber(el.attr('blx-slide-mdx'))) {
+                            el.removeClass('bg-black').addClass('bg-danger')
+                        } else {
+                            el.removeClass('bg-danger').addClass('bg-black')
+                        }
+                    },
+                    'touchend mouseup': function(e) {
+                        const it = $(this)
+                        const icon = it.parent().find('#icon')
+                        let transition = 'all .3s'
+
+                        it.attr('blx-slide', false)
+
+                        if (Math.abs(toNumber(it.attr('blx-slide-dx'))) >= toNumber(it.attr('blx-slide-mdx'))) {
+                            it.addClass('intransition').css({
+                                'transition': transition,
+                                'opacity': '0',
+                                'translate': `${toNumber(it.attr('blx-slide-dx')) < 0 ? '-' : '+'}${toNumber(it.attr('blx-slide-mw'))}px 0`
+                            }).one('transitionend', function(e) {
+                                deletedDays.push(`${el.attr('blx-day')},${el.attr('blx-journal')},${el.attr('blx-holiday')},${el.find('.collapse').hasClass('show')}`)
+                                el.remove()
+
+                                updateNavbar()
+                                updateSummaryData()
+                                unsavedChanges = true
+                            })
+                        } else {
+                            transition = 'all .5s'
+
+                            it.addClass('intransition').css({
+                                'transition': transition,
+                                'opacity': '1',
+                                'translate': '0px 0'
+                            }).one('transitionend', function(e) {
+                                it.removeClass('intransition')
+                            })
+                        }
+
+                        icon.css({
+                            'transition': transition,
+                            'translate': toNumber(it.attr('blx-slide-dx')) < 0 ? `0% -50%` : `-100% -50%`,
+                            'opacity': '1'
+                        })
+                    }
+                })
+
+                el.find('input.from, input.to').on({
+                    'input focus focusout': function(e) {
+                        const it = $(this)
+                        const value = String(it.val())
+
+                        if (value.length) {
+                            it.attr('blx-valid', isValid(value))
+                        } else {
+                            it.removeAttr('blx-valid')
+                        }
+
+                        if (e.type == 'focusout' && value) {
+                            if (it.attr('blx-valid') == 'true') {
+                                it.val(parseArrTime(parseStringTime(value)))
+                                el.attr('blx-journal', `${el.find('input.from').val()}-${el.find('input.to').val()}`)
+                                
+                                updateDay(el)
+                            } else {
+                                it.val(el.attr('blx-journal').split('-')[it.hasClass('from') ? 0 : 1])
+                            }
+                        } else if (e.type == 'focus') {
+                            it.select()
+                        }
+                    },
+                    'keyup': function(e) {
+                        e.preventDefault()
+
+                        const it = $(this)
+
+                        if (e.key == 'Enter') {
+                            if (it.hasClass('from')) {
+                                el.find('input.to').focus()
+                            } else {
+                                it.blur()
+                                el.find('input.from').focus()
+                            }
+                        } else if (e.key == 'Escape') {
+                            it.blur()
+                        }
+                    }
+                })
+
+                if (index < 0 || !$('[blx-day]').length) {
+                    list.append(el)
+                } else {
+                    let min, max
+                    min = toNumber($('[blx-day]').first().attr('blx-day'), -1)
+                    max = toNumber($('[blx-day]').last().attr('blx-day'), -1)
+
+                    if (min > index) {
+                        $(`[blx-day="${min}"]`).before(el)
+                    } else if (max < index) {
+                        $(`[blx-day="${max}"]`).after(el)
+                    } else {
+                        let dir, i, difMin, difMax
+                        difMin = Math.abs(index - min)
+                        difMax = Math.abs(index - max)
+                        i = index
+
+                        if (difMax <= difMin) {
+                            dir = 1
+                        } else if (difMin <= difMax) {
+                            dir = -1
+                        }
+
+                        while (true) {
+                            i += dir
+
+                            if ($(`[blx-day="${i}"]`).length) {
+                                if (dir > 0) {
+                                    $(`[blx-day="${i}"]`).before(el)
+                                } else {
+                                    $(`[blx-day="${i}"]`).after(el)
+                                }
+                                
+                                break
+                            }
+
+                            if (i > max || i < min) break
+                        }
+                    }
+                }
+
+                updateDay(el)
+                updateSummaryData()
+                updateNavbar()
+                unsavedChanges = true
+            }
+
+            function getJournal(from, to) {
+                let res = {}
+                res.from = parseArrTime(from)
+                res.to = parseArrTime(to)
+                res.hours = getWorkedHours(from[0] + (from[1] / 60), to[0] + (to[1] / 60))
+                res.summary = getHoursSummary(res.hours)
+
+                return res
+            }
+
+            function getWorkedHours(ini, fin) {
+                const res = { 
+                    normal: 0,
+                    nocturnal: 0,
+                    extra: 0,
+                    total: 0
+                }
+                const minIni = ini * 60
+                const minFin = (fin <= ini ? fin + 24 : fin) * 60
+
+                // Principal
+                for (let m = minIni; m < minFin; m++) {
+                    if (res.total >= 8 * 60) {
+                        res.extra++
+                    } else if (isNocturnal(m)) {
+                        res.nocturnal++
+                    } else {
+                        res.normal++
+                    }
+
+                    res.total++
+                }
+
+                res.extra = roundExtraHours(res.extra)
+
+                    // Corregimos resultados
+                    for (const key in res) {
+                        res[key] = res[key] / 60
+                        
+                        if (config.maxDecimalDigits >= 0) res[key] = res[key].toFixed(config.maxDecimalDigits)
+                    }
+
+                // Sub-funciones
+                function isNocturnal(m) {
+                    const h = (m / 60) % 24
+                    let i = parseStringTime(config.nocturnalTimeStart)
+                    let f = parseStringTime(config.nocturnalTimeEnd)
+
+                    i = i[0] + (i[1] / 60)
+                    f = f[0] + (f[1] / 60)
+                    
+                    return (f <= i) ? (h < f || h >= i) : (h >= i && h < f)
+                }
+
+                function roundExtraHours(m) {
+                    // return (m % 60 == 0) ? m : ((Math.floor(m / 30) + 1) * 30)
+                    return m
+                }
+
+                return res
+            }
+
+            function getHoursSummary(hours) {
+                const res = {
+                    normal: hours.normal * config.normalHourPrice,
+                    nocturnal: hours.nocturnal * config.nocturnalHourPrice,
+                    extra: hours.extra * config.normalHourPrice * config.extraHourMultiplier,
+                    total: 0
+                }
+                res.total = res.normal + res.nocturnal + res.extra
+
+                    // Corregimos resultados
+                    for (const key in res) {
+                        if (config.maxDecimalDigits >= 0) res[key] = res[key].toFixed(config.maxDecimalDigits)
+                    }
+                
+                return res
+            }
+
+            function loadJournalFile(init, error, res) {
+                let modal = $('#modal')
+                let modalBtn = $('#modal-btn')
+                let fontSize = '0.85rem'
+                let modalContent, modalCloseBtn, timeOutId, msg, arr
+
+                if (init == true) {
+                    modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
+                        <div class="modal-content p-0">
+                            <div class="modal-body d-flex flex-column p-2 gap-2 fst-italic font-monospace text-center">
+                                Cargando archivo de la jornada...
+                            </div>
+                        </div>
+                    </div>`)
+
+                    modal.html(modalContent)
+                    modalBtn.click()
+                    
+                    return loadFile()
+                }
+
+                if (error) {
+                    msg = error
+                } else {
+                    msg = 'El archivo de la jornada fue cargado correctamente'
+
+                    try {
+                        arr = JSON.parse(res.trim())
+
+                        if ($('[blx-day]').length) {
+                            modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
+                                <div class="modal-content p-0">
+                                    <div class="modal-body d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
+                                        Cuidado! Ya tienes una jornada con datos creada, ¿estas segur@ de que quieres remplazarla?
+                                        <div class="container-fluid d-flex gap-2 p-0">
+                                            <button id="cancel" type="button" class="btn btn-secondary container-fluid rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Cancelar</button>
+                                            <button id="confirm" type="button" class="btn btn-success container-fluid rounded-3 disabled" data-bs-dismiss="modal" style="font-size: ${fontSize};">Confirmar (${config.enableConfirmButtonDelay / 1000}s)</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`)
+                            timeOutId = setTimeout(function() {
+                                $(modalContent).find('button#confirm').removeClass('disabled').text('Confirmar').one('click', completeLoad)
+                            }, config.enableConfirmButtonDelay)
+
+                            modal.html(modalContent)
+
+                            return $(modalContent).find('button#cancel').one('click', function(e) { clearTimeout(timeOutId) })
+                        }
+
+                        // Complete load
+                        function completeLoad() {
+                            $('[blx-day]').remove()
+
+                            for (let el of arr) {
+                                el = el.split('-')
+
+                                if (el.length == 2) {
+                                    $('#day-input input.from').val(el[0])
+                                    $('#day-input input.to').val(el[1])
+                                    $('#day-input button').trigger('force-click')
+                                }
+                            }
+
+                            dayIndex = toNumber($('[blx-day]').last().attr('blx-day'), -1) + 1
+                        }
+
+                        completeLoad()
+
+                    } catch (err) {
+                        msg = 'No se pudo cargar el archivo de la jornada debido a que no se pudo leer la información del archivo'
+                    }
+                }
+
+                modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
+                    <div class="modal-content p-0">
+                        <div class="modal-body d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
+                            ${msg}
+                            <button type="button" class="btn btn-secondary container-fluid rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Cerrar diálogo</button>
+                        </div>
+                    </div>
+                </div>`)
+                modalCloseBtn = $(modalContent).find('button[data-bs-dismiss="modal"]')
+
+                modal.html(modalContent)
+                modalCloseBtn.on('click', function(e) {
+                        clearTimeout($(this).attr('blx-timeout'))
+                    })
+                    .attr('blx-timeout', setTimeout(function() {
+                        modalCloseBtn.click()
+                    }, config.modalAutoCloseDelay))
+            }
+
+            function saveJournalFile() {
+                let content = []
+                let modal = $('#modal')
+                let modalBtn = $('#modal-btn')
+                let fontSize = '0.85rem'
+                let defName = 'Jornada Laboral'
+                let modalContent, modalConfirmBtn, modalInput
+
+                modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
+                    <div class="modal-content p-0">
+                        <div class="modal-body d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
+                            <div class="form-floating">
+                                <input type="text" class="form-control border-0" id="saveJournalFileFilename" value="${defName}" placeholder="${defName}">
+                                <label for="saveJournalFileFilename">Nombre del archivo</label>
+                            </div>
+                            <div class="container-fluid d-flex gap-2 p-0">
+                                <button id="cancel" type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Cancelar</button>
+                                <button id="confirm" type="button" class="btn btn-success container-fluid rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Confirmar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`)
+                modalInput = $(modalContent).find('#saveJournalFileFilename')
+                modalConfirmBtn = $(modalContent).find('#confirm')
+
+                modal.html(modalContent)
+                modalBtn.click()
+
+                modalConfirmBtn.on('click', function(e) {
+                    if (!modalInput.val().trim()) modalInput.val(defName)
+
+                    if ($('[blx-day]').length) {
+                        for (let el of $('[blx-day]').get()) {
+                            content.push(`${$(el).attr('blx-journal')}`)
+                        }
+                    }
+
+                    saveFile(`${modalInput.val().trim()}.txt`, JSON.stringify(content))
+                })
+                modalInput.on('input focus focuslost keypress', function(e) {
+                    if (e.type == 'keypress' && e.key == 'Enter') return modalConfirmBtn.click()
+
+                    if (!modalInput.val().trim()) {
+                        modalConfirmBtn.text('Confirmar (nombre por defecto)')
+                    } else {
+                        modalConfirmBtn.text('Confirmar (nombre ingresado)')
+                    }
+                })
+                modal.one('focus', function(e) {
+                    modalInput.focus().select()
+                })
+            }
+
+        // Update events
+            function updateDayInputBtn() {
+                let i1 = $('#day-input input.from').attr('blx-valid')
+                let i2 = $('#day-input input.to').attr('blx-valid')
+                let btn = $('#day-input button')
+
+                switch (`${i1}:${i2}`) {
+                    case 'true:true':
+                        btn.removeClass('disabled')
+                        break
+                    default:
+                        btn.addClass('disabled')
+                        break
+                }
+            }
+
+            function updateSummaryData() {
+                updateDaysDataVisuals()
+                updateSummaryVisuals()
+            }
+
+            function updateSummaryVisuals() {
+                let nominalTotal = 0
+                let discountTotal, liquidTotal
+
+                if ($('[blx-day]').length) {
+                    for (let el of $('[blx-day]').get()) {
+                        nominalTotal += toNumber($(el).attr('blx-summary-total'))
+                    }
+                }
+
+                discountTotal = nominalTotal * config.totalDiscount / 100
+                liquidTotal = nominalTotal - discountTotal
+
+                if (config.maxDecimalDigits >= 0) {
+                    nominalTotal = nominalTotal.toFixed(config.maxDecimalDigits)
+                    discountTotal = discountTotal.toFixed(config.maxDecimalDigits)
+                    liquidTotal = liquidTotal.toFixed(config.maxDecimalDigits)
+                }
+
+                $('[blx-target="summary-nominalTotal"]').html(nominalTotal)
+                $('[blx-target="summary-discountTotal"]').html(discountTotal)
+                $('[blx-target="summary-liquidTotal"]').html(liquidTotal)
+            }
+
+            function updateDaysDataVisuals() {
+                if ($('[blx-day]').length) {
+                    for (let el of $('[blx-day]')) {
+                        updateDay(el)
+                    }
+                }
+
+                updateConfigDataVisuals()
+            }
+
+            function updateDay(el) {
+                el = $(el)
+
+                const detailsEl = el.find('[blx-target="details"]')
+                const from = parseStringTime(el.attr('blx-journal').split('-')[0])
+                const to = parseStringTime(el.attr('blx-journal').split('-')[1])
+                const journal = getJournal(from, to)
+
+                // Inputs
+                el.find('input.from').val(journal.from).attr('blx-valid', true)
+                el.find('input.to').val(journal.to).attr('blx-valid', true)
+
+                // Details
+                detailsEl.html(`<span class="text-secondary-emphasis">${journal.hours.normal}hrs norm</span> <span class="text-secondary">x</span> <span class="text-secondary-emphasis">$${config.normalHourPrice} c/u</span> <span class="text-secondary">=</span> <span class="text-secondary-emphasis">$${journal.summary.normal}</span><br>
+                <span class="text-secondary-emphasis">${journal.hours.nocturnal}hrs noct</span> <span class="text-secondary">x</span> <span class="text-secondary-emphasis">$${config.nocturnalHourPrice} c/u</span> <span class="text-secondary">=</span> <span class="text-secondary-emphasis">$${journal.summary.nocturnal}</span><br>
+                <span class="text-secondary-emphasis">${journal.hours.extra}hrs extr</span> <span class="text-secondary">x</span> <span class="text-secondary-emphasis">$${config.normalHourPrice * config.extraHourMultiplier} c/u</span> <span class="text-secondary">=</span> <span class="text-secondary-emphasis">$${journal.summary.extra}</span><br>
+                <br>
+                <span class="text-success-emphasis">${journal.hours.total}hrs totales trabajadas</span><br>
+                <span class="text-success-emphasis">$${journal.summary.total} totales generados</span>`)
+
+                // Total
+                el.attr('blx-summary-total', journal.summary.total)
+
+                // Update summary
+                updateSummaryVisuals()
+            }
+
+            function updateConfigData() {
+                config.maxDecimalDigits = toNumber(config.maxDecimalDigits, -1)
+                config.normalHourPrice = toNumber(config.normalHourPrice)
+                config.nocturnalHourPrice = toNumber(config.nocturnalHourPrice)
+                config.dayInputDelay = toNumber(config.dayInputDelay)
+                config.totalDiscount = toNumber(config.totalDiscount)
+                config.modalAutoCloseDelay = toNumber(config.modalAutoCloseDelay)
+                config.fileLoadCheckDelay = toNumber(config.fileLoadCheckDelay)
+                config.enableConfirmButtonDelay = toNumber(config.enableConfirmButtonDelay)
+                config.nocturnalTimeStart = parseArrTime(parseStringTime(config.nocturnalTimeStart))
+                config.nocturnalTimeEnd = parseArrTime(parseStringTime(config.nocturnalTimeEnd))
+                config.extraHourMultiplier = toNumber(config.extraHourMultiplier)
+
+                if (config.maxDecimalDigits >= 0) {
+                    config.totalDiscount = config.totalDiscount.toFixed(config.maxDecimalDigits)
+                    config.normalHourPrice = config.normalHourPrice.toFixed(config.maxDecimalDigits)
+                    config.nocturnalHourPrice = config.nocturnalHourPrice.toFixed(config.maxDecimalDigits)
+                }
+
+                updateConfigDataVisuals()
+            }
+
+            function updateConfigDataVisuals() {
+                $('[blx-target="config.totalDiscount"]').html(config.totalDiscount)
+                $('[blx-target="config.normalHourPrice"]').html(config.normalHourPrice)
+                $('[blx-target="config.nocturnalHourPrice"]').html(config.nocturnalHourPrice)
+            }
+
+            function updateNavbar() {
+                let saveBtn = $('#navbar #save')
+                let loadBtn = $('#navbar #load')
+                let undoBtn = $('#navbar #undo')
+                let configBtn = $('#navbar #config')
+                let helpBtn = $('#navbar #help')
+
+                if ($('[blx-day]').length) {
+                    saveBtn.removeClass('disabled')
+                } else {
+                    saveBtn.addClass('disabled')
+                }
+
+                if (deletedDays.length) {
+                    undoBtn.removeClass('disabled')
+                } else {
+                    undoBtn.addClass('disabled')
+                }
+
+                loadBtn.removeClass('disabled')
+                helpBtn.removeClass('disabled')
+                configBtn.removeClass('disabled')
+            }
+
+        // Events <-----------------------------------------------------------------------------------
+        $(window).on({
+            'load': function(e) {
+                updateConfigData()
+                updateSummaryData()
+                updateNavbar()
+            },
+            'beforeunload': function(e) {
+                if (unsavedChanges) {
+                    e.preventDefault()
+                    e.returnValue = `Tienes cambios sin guardar, ¿estás segur@ que quieres salir de la página o refrescarla?`
+                }
+            }
+        })
+
+        $(document).on({
+            'selectionchange': function(e) {
+                if (e.target.tagName != 'INPUT') {
+                    e.preventDefault()
+                    document.getSelection().removeAllRanges()
+                }
+            }
+        })
+
+        // Day specific
+            $('#day-input').find('input.from, input.to').on({
+                'input focus focusout': function(e) {
+                    const el = $(this)
+                    const value = String(el.val())
+
+                    if (value.length) {
+                        el.attr('blx-valid', isValid(value))
+                    } else {
+                        el.removeAttr('blx-valid')
+                    }
+
+                    updateDayInputBtn()
+
+                    if (e.type == 'focusout' && value) {
+                        el.val(parseArrTime(parseStringTime(value))).trigger('input')
+                    } else if (e.type == 'focus') {
+                        el.select()
+                    }
+                },
+                'keyup': function(e) {
+                    e.preventDefault()
+
+                    const el = $(this)
+                    const parent= el.parent()
+
+                    if (e.key == 'Enter') {
+                        if (el.hasClass('from')) {
+                            parent.find('input.to').focus()
+                        } else {
+                            el.blur()
+                            parent.find('button').click()
+                            parent.find('input.from').focus()
+                        }
+                    } else if (e.key == 'Escape') {
+                        el.blur()
+                    }
+                }
+            })
+
+            $('#day-input').find('button').on('click force-click', function(e) {
+                    e.preventDefault()
+
+                    const el = $(this)
+                    const parent= el.parent()
+
+                    if (e.type != 'force-click' && (el.hasClass('disabled'))) return
+
+                    let date = (new Date()).getTime()
+
+                    if (e.type != 'force-click' && (el.attr('blx-delay') != undefined && date < el.attr('blx-delay'))) return
+
+                    el.attr('blx-delay', date + config.dayInputDelay).blur()
+
+                    appendDay(parent.find('input.from').val(), parent.find('input.to').val())
+                }
+            )
+
+        // Navbar specific
+            $('#navbar #save').on('click', function(e) {
+                e.preventDefault()
+
+                saveJournalFile()
+            })
+            
+            $('#navbar #load').on('click', function(e) {
+                e.preventDefault()
+
+                loadJournalFile(true)
+            })
+
+            $('#navbar #undo').on('click', function(e) {
+                e.preventDefault()
+
+                if (deletedDays.length) {
+                    const day = String(deletedDays.pop()).split(',')
+                    const tmp = day[1].split('-')
+
+                    appendDay(...tmp, day[0], ...day.slice(2))
+                }
+            })
+
+            $('#navbar #help').on('click', function(e) {
+                e.preventDefault()
+
+                let modal = $('#modal')
+                let modalBtn = $('#modal-btn')
+                let fontSize = '0.75rem'
+                let modalContent
+
+                modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
+                    <div class="modal-content p-0">
+                        <div class="modal-body d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
+                            <p class="text-start">
+                            · Puedes agregar un día de la jornada a la lista en la parte superior<br>
+                            · Puedes guardar, cargar los días de la lista con los primeros 2 botones de abajo<br>
+                            · Puedes recuperar los días borrados de la lista con el tercer botón de abajo<br>
+                            · Puedes configurar ciertas cosas como el sueldo con el cuarto botón de abajo<br>
+                            · Puedes abrir este cartel para recibir ayuda con el último botón de abajo<br>
+                            · Puedes borrar un día especifico de la lista deslizandolo hacia un costado<br>
+                            · Puedes expandir un día especifico dandole click a la cruzeta de la derecha que tiene<br>
+                            · Puedes hacer que un día especifico sea o no feriado con un botón si expandes el día<br>
+                            · Puedes ver un resumen de la jornada tocando el apartado de los totales en la parte de abajo<br>
+                            <br>
+                            <span class="text-warning-emphasis">(los días feriados tendran un color de tonalidad azúl)</span>
+                            </p>
+                            <button type="button" class="btn btn-secondary container-fluid rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Cerrar díalogo</button>
+                        </div>
+                    </div>
+                </div>`)
+
+                modal.html(modalContent)
+                modalBtn.click()
+            })
+
+            $('#navbar #config').on({
+                'click': function(e) {
+                    e.preventDefault()
+
+                    updateConfigData()
+
+                    let modal = $('#modal')
+                    let modalBtn = $('#modal-btn')
+                    let fontSize = '0.75rem'
+                    let modalContent, dismissBtn, cancelBtn, confirmBtn, configInputs
+
+                    modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
+                        <div class="modal-content p-0 pt-2">
+                            <div class="modal-header p-2 font-monospace border-0">
+                                <h4>Configuraciones</h4>
+                            </div>
+                            <div class="modal-body d-flex flex-column p-2 py-0 gap-2 font-monospace">
+                                <div class="container-fluid d-flex flex-column p-2 bg-white rounded-3" style="--bs-bg-opacity: .03;">
+                                    <h6 class="p-0 m-0">Salario y descuentos</h6>
+                                    <hr class="p-0 my-0 mb-2">
+                                    <div class="container-fluid d-flex flex-column p-0 gap-2">
+                                        <div class="form-floating border-0 p-0">
+                                            <input blx-config-input type="text" pattern="[0-9]+${config.maxDecimalDigits >= 0 ? (config.maxDecimalDigits > 0 ? `(\\.[0-9]{1,${config.maxDecimalDigits}})?` : '') : '(\\.[0-9]+)?'}" required class="blx-group-numbers form-control border-0" blx-target="normalHourPrice">
+                                            <label>Hora normal</label>
+                                        </div>
+                                        <div class="form-floating border-0 p-0">
+                                            <input blx-config-input type="text" pattern="[0-9]+${config.maxDecimalDigits >= 0 ? (config.maxDecimalDigits > 0 ? `(\\.[0-9]{1,${config.maxDecimalDigits}})?` : '') : '(\\.[0-9]+)?'}" required class="blx-group-numbers form-control border-0" blx-target="nocturnalHourPrice">
+                                            <label>Hora nocturna</label>
+                                        </div>
+                                        <div class="form-floating border-0 p-0">
+                                            <input blx-config-input type="text" pattern="([0-9]{1,2}${config.maxDecimalDigits >= 0 ? (config.maxDecimalDigits > 0 ? `(\\.[0-9]{1,${config.maxDecimalDigits}})?` : '') : '(\\.[0-9]+)?'})|100" required class="blx-group-numbers form-control border-0" blx-target="totalDiscount">
+                                            <label>Descuento total</label>
+                                        </div>
+                                        <div class="form-floating border-0 p-0">
+                                            <input blx-config-input type="text" pattern="[1-9]([0-9]+)?(\\.[0-9]+)?" required class="form-control border-0" blx-target="extraHourMultiplier">
+                                            <label>Multiplicador de horas extras</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="container-fluid d-flex flex-column p-2 bg-white rounded-3" style="--bs-bg-opacity: .03;">
+                                    <h6 class="p-0 m-0">Horario nocturno</h6>
+                                    <hr class="p-0 my-0 mb-2">
+                                    <div class="container-fluid d-flex flex-column p-0 gap-2">
+                                        <div class="form-floating border-0 p-0">
+                                            <input blx-config-input type="text" pattern="(([01]?[0-9])|(2[0-4]))\:[0-5]?[0-9]" required class="blx-group-time form-control border-0" blx-target="nocturnalTimeStart">
+                                            <label>Inicio</label>
+                                        </div>
+                                        <div class="form-floating border-0 p-0">
+                                            <input blx-config-input type="text" pattern="(([01]?[0-9])|(2[0-4]))\:[0-5]?[0-9]" required class="blx-group-time form-control border-0" blx-target="nocturnalTimeEnd">
+                                            <label>Final</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="container-fluid d-flex flex-column p-2 bg-white rounded-3" style="--bs-bg-opacity: .03;">
+                                    <h6 class="p-0 m-0">Delays en milisegundos</h6>
+                                    <hr class="p-0 my-0 mb-2">
+                                    <div class="container-fluid d-flex flex-column p-0 gap-2">
+                                        <div class="form-floating border-0 p-0">
+                                            <input blx-config-input type="text" pattern="[1-9]([0-9]+)?" required class="form-control border-0" blx-target="modalAutoCloseDelay">
+                                            <label>Para cerrar automáticamnte los dialogos</label>
+                                        </div>
+                                        <div class="form-floating border-0 p-0">
+                                            <input blx-config-input type="text" pattern="[1-9]([0-9]+)?" required class="form-control border-0" blx-target="enableConfirmButtonDelay">
+                                            <label>Para activar el botón de confirmación</label>
+                                        </div>${!adminMode ? '' : `
+                                        <div class="form-floating border-0 p-0">
+                                            <input blx-config-input type="text" pattern="[1-9]([0-9]+)?" required class="form-control border-0" blx-target="dayInputDelay">
+                                            <label>Para permitir añadir un registro de jornada</label>
+                                        </div>`}${!adminMode ? '' : `
+                                        <div class="form-floating border-0 p-0">
+                                            <input blx-config-input type="text" pattern="[1-9]([0-9]+)?" minlength="1" class="form-control border-0" blx-target="fileLoadCheckDelay">
+                                            <label>Para verificar la subida de archivos</label>
+                                        </div>`}
+                                    </div>
+                                </div>${!adminMode ? '' : `
+                                <div class="container-fluid d-flex flex-column p-2 bg-white rounded-3" style="--bs-bg-opacity: .03;">
+                                    <h6 class="p-0 m-0">Otros</h6>
+                                    <hr class="p-0 my-0 mb-2">
+                                    <div class="container-fluid d-flex flex-column p-0 gap-2">
+                                        <div class="form-floating border-0 p-0">
+                                            <input blx-config-input type="text" pattern="\-1|([0-9]+)" required class="form-control border-0" blx-target="maxDecimalDigits">
+                                            <label>Cant. maxima de dígitos decimales (-1 = inf)</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                `}
+                            </div>
+                            <div class="modal-footer container-fluid d-flex gap-0 p-2 font-monospace border-0">
+                                <button id="cancelBtn" type="button" class="btn btn-secondary flex-grow-1 rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Salir</button>
+                                <button id="confirmBtn" type="button" class="btn btn-success flex-grow-1 rounded-3 disabled" data-bs-dismiss="modal" style="font-size: ${fontSize};">Guardar cambios</button>
+                            </div>
+                        </div>
+                    </div>`)
+                    dismissBtn = $(modalContent).find('button#dismissBtn')
+                    cancelBtn = $(modalContent).find('button#cancelBtn')
+                    confirmBtn = $(modalContent).find('button#confirmBtn')
+                    configInputs = $(modalContent).find('[blx-config-input]')
+
+                    confirmBtn.on('click', function(e) {
+                        const el = $(this)
+
+                        if (!el.hasClass('disabled')) {
+                            const modal = elFomStr(`<div id="sub-modal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" >
+                                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
+                                    <div class="modal-content p-0 pt-2">
+                                        <div class="modal-body p-2 font-monospace">
+                                            ¿Estas seguro de modificar las configuraciones?
+                                        </div>
+                                        <div class="modal-footer container-fluid d-flex gap-0 p-2 font-monospace border-0">
+                                            <button id="cancelBtn" type="button" class="btn btn-secondary flex-grow-1 rounded-3" style="font-size: ${fontSize};">No</button>
+                                            <button id="confirmBtn" type="button" class="btn btn-success flex-grow-1 rounded-3 disabled" data-bs-dismiss="modal" style="font-size: ${fontSize};">Si (${config.enableConfirmButtonDelay / 1000}s)</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`)
+                            const modalBtn = elFomStr(`<button type="button" data-bs-toggle="modal" data-bs-target="#sub-modal" style="display: none !important;"></button>`)
+                            const cancelBtn = $(modal).find('button#cancelBtn')
+                            const confirmBtn = $(modal).find('button#confirmBtn')
+                            const timeoutId = setTimeout(() => {
+                                confirmBtn.removeClass('disabled').text('Si')
+                            }, config.enableConfirmButtonDelay)
+
+                            cancelBtn.on('click', () => { if (!$(this).hasClass('disabled')) exit() })
+                            confirmBtn.on('click', () => { if (!$(this).hasClass('disabled')) exit(true) })
+
+                            document.body.append(modalBtn, modal)
+                            modalBtn.click()
+
+                            // method
+                            function exit(isConfirm) {
+                                clearTimeout(timeoutId)
+
+                                if (isConfirm) {
+                                    configInputs.each((i, el) => {
+                                        el = $(el)
+
+                                        if (el.is(':valid') && el.attr('blx-init-val') != el.val()) {
+                                            modificarLlave(config, el.attr('blx-target'), el.val())
+                                        }
+                                    })
+
+                                    updateConfigData()
+                                    updateSummaryData()
+
+                                    console.log(dismissBtn)
+                                } else {
+
+                                    $('#modal-btn').click()
+                                }
+
+                                setTimeout(() => {
+                                    modalBtn.remove()
+                                    modal.remove()
+                                }, 50)
+                            }
+                        }
+                    })
+
+                    cancelBtn.on('click', function(e) {
+                        if (!confirmBtn.hasClass('disabled')) {
+                            const el = $(this)
+                            const modal = elFomStr(`<div id="sub-modal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" >
+                                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
+                                    <div class="modal-content p-0 pt-2">
+                                        <div class="modal-body p-2 font-monospace">
+                                            ¿Estas seguro de querer salir? (tienes cambios sin guardar)
+                                        </div>
+                                        <div class="modal-footer container-fluid d-flex gap-0 p-2 font-monospace border-0">
+                                            <button id="cancelBtn" type="button" class="btn btn-secondary flex-grow-1 rounded-3" style="font-size: ${fontSize};">No</button>
+                                            <button id="confirmBtn" type="button" class="btn btn-success flex-grow-1 rounded-3 disabled" data-bs-dismiss="modal" style="font-size: ${fontSize};">Si (${config.enableConfirmButtonDelay / 1000}s)</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`)
+                            const modalBtn = elFomStr(`<button type="button" data-bs-toggle="modal" data-bs-target="#sub-modal" style="display: none !important;"></button>`)
+                            const cancelBtn = $(modal).find('button#cancelBtn')
+                            const confirmBtn = $(modal).find('button#confirmBtn')
+                            const timeoutId = setTimeout(() => {
+                                confirmBtn.removeClass('disabled').text('Si')
+                            }, config.enableConfirmButtonDelay)
+
+                            cancelBtn.on('click', () => { if (!$(this).hasClass('disabled')) exit() })
+                            confirmBtn.on('click', () => { if (!$(this).hasClass('disabled')) exit(true) })
+
+                            document.body.append(modalBtn, modal)
+                            modalBtn.click()
+
+                            // method
+                            function exit(isConfirm) {
+                                clearTimeout(timeoutId)
+
+                                if (!isConfirm) {
+                                    $('#modal-btn').click()
+                                }
+
+                                setTimeout(() => {
+                                    modalBtn.remove()
+                                    modal.remove()
+                                }, 50)
+                            }
+                        }
+                    })
+
+                    configInputs.on({
+                        'focus': function(e) {
+                            const el = $(this)
+
+                            el.select()
+                            el.attr('blx-val', el.val())
+                        },
+                        'input': function(e) {
+                            let existsChanges = false
+                            
+                            configInputs.each((i, el) => {
+                                el = $(el)
+
+                                if (el.is(':valid') && el.attr('blx-init-val') != el.val()) {
+                                    existsChanges = true
+                                }
+                            })
+
+                            if (existsChanges) {
+                                confirmBtn.removeClass('disabled')
+                            } else {
+                                confirmBtn.addClass('disabled')
+                            }
+                        },
+                        'focusout': function(e) {
+                            const el = $(this)
+
+                            if (el.is(':invalid')) {
+                                el.val(el.attr('blx-val'))
+                            }
+
+                            el.trigger('blx-fix').trigger('input')
+                        },
+                        'keyup': function(e) {
+                            e.preventDefault()
+
+                            const el = $(this)
+
+                            if (e.key == 'Enter') {
+                                el.blur()
+                            }
+                        },
+                        'blx-fix': function(e) {
+                            const el = $(this)
+
+                            if (el.hasClass('blx-group-time')) {
+                                el.val(parseArrTime(parseStringTime(el.val())))
+                            }
+
+                            if (el.hasClass('blx-group-numbers')) {
+                                let num = toNumber(el.val())
+
+                                if (config.maxDecimalDigits >= 0) {
+                                    num = num.toFixed(config.maxDecimalDigits)
+                                }
+
+                                el.val(num)
+                            }
+                        },
+                        'blx-init': function(e) {
+                            const el = $(this)
+
+                            el.val(obtenerLlave(config, el.attr('blx-target')))
+                                .attr('blx-init-val', el.val())
+                                .trigger('blx-fix')
+                        }
+                    }).trigger('blx-init')
+
+                    $(modalContent).find('.modal-footer button').on('click', function(e) {
+                        $(modalContent).find('[blx-config-input]').off()
+                    })
+
+                    modal.html(modalContent)
+                    modalBtn.click()
+
+                    // metodos utiles
+                    function modificarLlave(objeto, llave, valor) {
+                        const partes = llave.split('.')
+                        let target = objeto
+
+                        if (partes.length > 1) {
+                            for (const parte of partes.slice(0, -1)) {
+                                if (!target[parte]) {
+                                    target[parte] = {}
+                                }
+
+                                target = target[parte]
+                            }
+                        }
+
+                        target[partes[partes.length - 1]] = valor
+
+                        return target[partes[partes.length - 1]]
+                    }
+
+                    function obtenerLlave(objeto, llave) {
+                        const partes = llave.split('.')
+                        let target = objeto
+
+                        if (partes.length > 0) {
+                            for (const parte of partes) {
+                                target = target[parte]
+                            }
+                        }
+
+                        return target
+                    }
+                },
+                'contextmenu': function(e) {
+                    e.preventDefault()
+
+                    let count = toNumber($(this).attr('blx-count'), 0) + 1
+
+                    $(this).attr('blx-count', count)
+                    
+                    if (count >= 5 && !adminMode) {
+                        adminMode = true
+
+                        alert('Admin mode ON')
+                    }
+                },
+                'focusout click': function() {
+                    $(this).attr('blx-count', 0)
+                }
+            })
+
+            // #TODO#
+            // Menu de configuración, hacerlo dentro de un modal con 2 botones abajo que sean (Salir) y (Guardar)
+            // Si le das a (Salir) y existen cambios que te diga si estas seguro pq tienes cambios sin guardar
+
+     </script>
+</body>
+</html>
+
+
+<!-- Search for #TODO# (por hacer) -->
+<!-- Search for #TEMP# (tempora) -->
