@@ -28,16 +28,13 @@
             box-sizing: border-box;
             transition: all .5s;
         }
-        .day-input .input[blx-valid="true"] { color: var(--bs-light); }
-        .day-input .input[blx-valid="false"] { color: var(--bs-secondary); }
-        .day-input .input[blx-valid="true"]:focus { color: var(--bs-success); }
-        .day-input .input[blx-valid="false"]:focus { color: var(--bs-danger); }
+
+        .day-input .input:valid:not(:focus) { color: var(--bs-light); }
+        .day-input .input:invalid:not(:focus) { color: var(--bs-secondary); }
 
         #day-input .input { background: rgba(255, 255, 255, .03); }
         #day-input .input:hover,
         #day-input .input:focus { background: rgba(255, 255, 255, 0); }
-        #day-input .input[blx-valid="true"] { color: var(--bs-success); }
-        #day-input .input[blx-valid="false"] { color: var(--bs-danger); }
 
         [blx-day] #main:not(.intransition) { transition: background .3s !important; }
         [blx-day] #main:not(.intransition):has(*:focus) {
@@ -45,8 +42,8 @@
             transition: background .5s !important;
         }
 
-        [blx-config-input]:focus:valid { color: var(--bs-success); }
-        [blx-config-input]:focus:invalid { color: var(--bs-danger); }
+        *:focus:valid { color: var(--bs-success); }
+        *:focus:invalid { color: var(--bs-danger); }
     </style>
 </head>
 <body data-bs-theme="dark" class="p-2 d-flex flex-column gap-2 overflow-hidden font-monospace" style="width: 100dvw; height: 100dvh;">
@@ -55,11 +52,11 @@
         <span>
             De
         </span>
-        <input type="text" class="input rounded-3 py-1 px-2 from" placeholder="20:00">
+        <input type="text" pattern="^(([01]?[0-9])|(2[0-4]))(:[0-5]?[0-9])?$" required class="input rounded-3 py-1 px-2 from" placeholder="20:00">
         <span>
             a
         </span>
-        <input type="text" class="input rounded-3 py-1 px-2 to" placeholder="02:00">
+        <input type="text" pattern="^(([01]?[0-9])|(2[0-4]))(:[0-5]?[0-9])?$" required class="input rounded-3 py-1 px-2 to" placeholder="02:00">
         <button class="btn btn-success disabled rounded-3">
             <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12.5 21h-6.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v5" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M16 19h6" /><path d="M19 16v6" /></svg>
         </button>
@@ -118,11 +115,6 @@
         </button>
     </div>
 
-    <!-- Modal -->
-    <button id="modal-btn" type="button" data-bs-toggle="modal" data-bs-target="#modal" style="display: none !important;"></button>
-      
-    <div id="modal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" ></div>
-
     <!-- Script -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
@@ -148,10 +140,10 @@
         // Functions <-----------------------------------------------------------------------------------
         // Utility functions
             function isNumber(input, onlyInteger) {
-                let exp = new RegExp('^\-?[0-9]+(\.[0-9]+)?$')
+                let exp = new RegExp('^-?[0-9]+(\.[0-9]+)?$')
 
                 if (onlyInteger == true) {
-                    exp = new RegExp('^\-?[0-9]+$')
+                    exp = new RegExp('^-?[0-9]+$')
                 }
 
                 return exp.test(String(input).trim())
@@ -216,16 +208,6 @@
             }
 
         // Events specific
-            function isValid(str) {
-                let arr = str.split(':').map(val => toNumber(val, -1))
-
-                if (!arr.length) return false
-                if (arr.length >= 1 && (arr[0] < 0 || arr[0] > 24)) return false
-                if (arr.length >= 2 && (arr[1] < 0 || arr[1] > 59)) return false
-                
-                return true
-            }
-
             function parseStringTime(str) {
                 let arr = str.split(':')
 
@@ -264,11 +246,11 @@
                                 <span>
                                     De
                                 </span>
-                                <input type="text" class="input rounded-3 py-1 px-2 from" placeholder="20:00">
+                                <input type="text" pattern="^(([01]?[0-9])|(2[0-4]))(:[0-5]?[0-9])?$" required class="input rounded-3 py-1 px-2 from" placeholder="20:00">
                                 <span>
                                     a
                                 </span>
-                                <input type="text" class="input rounded-3 py-1 px-2 to" placeholder="02:00">
+                                <input type="text" pattern="^(([01]?[0-9])|(2[0-4]))(:[0-5]?[0-9])?$" required class="input rounded-3 py-1 px-2 to" placeholder="02:00">
                             </div>
                             <i class="ti ti-caret-down-filled fs-5 p-2 m-auto" data-bs-toggle="collapse" data-bs-target="[blx-day='${elIndex}'] .collapse"></i>
                         </div>
@@ -376,13 +358,7 @@
                         const it = $(this)
                         const value = String(it.val())
 
-                        if (value.length) {
-                            it.attr('blx-valid', isValid(value))
-                        } else {
-                            it.removeAttr('blx-valid')
-                        }
-
-                        if (e.type == 'focusout' && value) {
+                        if (e.type == 'focusout' && it.is(':valid')) {
                             if (it.attr('blx-valid') == 'true') {
                                 it.val(parseArrTime(parseStringTime(value)))
                                 el.attr('blx-journal', `${el.find('input.from').val()}-${el.find('input.to').val()}`)
@@ -474,7 +450,8 @@
                 const res = { 
                     normal: 0,
                     nocturnal: 0,
-                    extra: 0,
+                    normalExtra: 0,
+                    nocturnalExtra: 0,
                     total: 0
                 }
                 const minIni = ini * 60
@@ -482,25 +459,29 @@
 
                 // Principal
                 for (let m = minIni; m < minFin; m++) {
-                    if (res.total >= 8 * 60) {
-                        res.extra++
-                    } else if (isNocturnal(m)) {
-                        res.nocturnal++
+                    if (isNocturnal(m)) {
+                        if (res.total >= 8 * 60) {
+                            res.nocturnalExtra++
+                        } else {
+                            res.nocturnal++
+                        }
                     } else {
-                        res.normal++
+                        if (res.total >= 8 * 60) {
+                            res.normalExtra++
+                        } else {
+                            res.normal++
+                        }
                     }
 
                     res.total++
                 }
 
-                res.extra = roundExtraHours(res.extra)
-
-                    // Corregimos resultados
-                    for (const key in res) {
-                        res[key] = res[key] / 60
-                        
-                        if (config.maxDecimalDigits >= 0) res[key] = res[key].toFixed(config.maxDecimalDigits)
-                    }
+                // Corregimos resultados
+                for (const key in res) {
+                    res[key] = res[key] / 60
+                    
+                    if (config.maxDecimalDigits >= 0) res[key] = res[key].toFixed(config.maxDecimalDigits)
+                }
 
                 // Sub-funciones
                 function isNocturnal(m) {
@@ -514,11 +495,6 @@
                     return (f <= i) ? (h < f || h >= i) : (h >= i && h < f)
                 }
 
-                function roundExtraHours(m) {
-                    // return (m % 60 == 0) ? m : ((Math.floor(m / 30) + 1) * 30)
-                    return m
-                }
-
                 return res
             }
 
@@ -526,10 +502,11 @@
                 const res = {
                     normal: hours.normal * config.normalHourPrice,
                     nocturnal: hours.nocturnal * config.nocturnalHourPrice,
-                    extra: hours.extra * config.normalHourPrice * config.extraHourMultiplier,
+                    normalExtra: hours.normalExtra * config.normalHourPrice * config.extraHourMultiplier,
+                    nocturnalExtra: hours.nocturnalExtra * config.nocturnalHourPrice * config.extraHourMultiplier,
                     total: 0
                 }
-                res.total = res.normal + res.nocturnal + res.extra
+                res.total = res.normal + res.nocturnal + res.normalExtra + res.nocturnalExtra
 
                     // Corregimos resultados
                     for (const key in res) {
@@ -540,155 +517,155 @@
             }
 
             function loadJournalFile(init, error, res) {
-                let modal = $('#modal')
-                let modalBtn = $('#modal-btn')
-                let fontSize = '0.85rem'
-                let modalContent, modalCloseBtn, timeOutId, msg, arr
+                // let modal = $('#modal')
+                // let modalBtn = $('#modal-btn')
+                // let fontSize = '0.85rem'
+                // let modalContent, modalCloseBtn, timeOutId, msg, arr
 
-                if (init == true) {
-                    modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
-                        <div class="modal-content p-0">
-                            <div class="modal-body d-flex flex-column p-2 gap-2 fst-italic font-monospace text-center">
-                                Cargando archivo de la jornada...
-                            </div>
-                        </div>
-                    </div>`)
+                // if (init == true) {
+                //     modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
+                //         <div class="modal-content p-0">
+                //             <div class="modal-body d-flex flex-column p-2 gap-2 fst-italic font-monospace text-center">
+                //                 Cargando archivo de la jornada...
+                //             </div>
+                //         </div>
+                //     </div>`)
 
-                    modal.html(modalContent)
-                    modalBtn.click()
+                //     modal.html(modalContent)
+                    new Alert('Función deshabilitada por el momento!', 5000) // #DEV#
                     
-                    return loadFile()
-                }
+                //     return loadFile()
+                // }
 
-                if (error) {
-                    msg = error
-                } else {
-                    msg = 'El archivo de la jornada fue cargado correctamente'
+                // if (error) {
+                //     msg = error
+                // } else {
+                //     msg = 'El archivo de la jornada fue cargado correctamente'
 
-                    try {
-                        arr = JSON.parse(res.trim())
+                //     try {
+                //         arr = JSON.parse(res.trim())
 
-                        if ($('[blx-day]').length) {
-                            modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
-                                <div class="modal-content p-0">
-                                    <div class="modal-body d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
-                                        Cuidado! Ya tienes una jornada con datos creada, ¿estas segur@ de que quieres remplazarla?
-                                        <div class="container-fluid d-flex gap-2 p-0">
-                                            <button id="cancel" type="button" class="btn btn-secondary container-fluid rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Cancelar</button>
-                                            <button id="confirm" type="button" class="btn btn-success container-fluid rounded-3 disabled" data-bs-dismiss="modal" style="font-size: ${fontSize};">Confirmar (${config.enableConfirmButtonDelay / 1000}s)</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>`)
-                            timeOutId = setTimeout(function() {
-                                $(modalContent).find('button#confirm').removeClass('disabled').text('Confirmar').one('click', completeLoad)
-                            }, config.enableConfirmButtonDelay)
+                //         if ($('[blx-day]').length) {
+                //             modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
+                //                 <div class="modal-content p-0">
+                //                     <div class="modal-body d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
+                //                         Cuidado! Ya tienes una jornada con datos creada, ¿estas segur@ de que quieres remplazarla?
+                //                         <div class="container-fluid d-flex gap-2 p-0">
+                //                             <button id="cancel" type="button" class="btn btn-secondary container-fluid rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Cancelar</button>
+                //                             <button id="confirm" type="button" class="btn btn-success container-fluid rounded-3 disabled" data-bs-dismiss="modal" style="font-size: ${fontSize};">Confirmar (${config.enableConfirmButtonDelay / 1000}s)</button>
+                //                         </div>
+                //                     </div>
+                //                 </div>
+                //             </div>`)
+                //             timeOutId = setTimeout(function() {
+                //                 $(modalContent).find('button#confirm').removeClass('disabled').text('Confirmar').one('click', completeLoad)
+                //             }, config.enableConfirmButtonDelay)
 
-                            modal.html(modalContent)
+                //             modal.html(modalContent)
 
-                            return $(modalContent).find('button#cancel').one('click', function(e) { clearTimeout(timeOutId) })
-                        }
+                //             return $(modalContent).find('button#cancel').one('click', function(e) { clearTimeout(timeOutId) })
+                //         }
 
-                        // Complete load
-                        function completeLoad() {
-                            $('[blx-day]').remove()
+                //         // Complete load
+                //         function completeLoad() {
+                //             $('[blx-day]').remove()
 
-                            for (let el of arr) {
-                                el = el.split('-')
+                //             for (let el of arr) {
+                //                 el = el.split('-')
 
-                                if (el.length == 2) {
-                                    $('#day-input input.from').val(el[0])
-                                    $('#day-input input.to').val(el[1])
-                                    $('#day-input button').trigger('force-click')
-                                }
-                            }
+                //                 if (el.length == 2) {
+                //                     $('#day-input input.from').val(el[0])
+                //                     $('#day-input input.to').val(el[1])
+                //                     $('#day-input button').trigger('force-click')
+                //                 }
+                //             }
 
-                            dayIndex = toNumber($('[blx-day]').last().attr('blx-day'), -1) + 1
-                        }
+                //             dayIndex = toNumber($('[blx-day]').last().attr('blx-day'), -1) + 1
+                //         }
 
-                        completeLoad()
+                //         completeLoad()
 
-                    } catch (err) {
-                        msg = 'No se pudo cargar el archivo de la jornada debido a que no se pudo leer la información del archivo'
-                    }
-                }
+                //     } catch (err) {
+                //         msg = 'No se pudo cargar el archivo de la jornada debido a que no se pudo leer la información del archivo'
+                //     }
+                // }
 
-                modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
-                    <div class="modal-content p-0">
-                        <div class="modal-body d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
-                            ${msg}
-                            <button type="button" class="btn btn-secondary container-fluid rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Cerrar diálogo</button>
-                        </div>
-                    </div>
-                </div>`)
-                modalCloseBtn = $(modalContent).find('button[data-bs-dismiss="modal"]')
+                // modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
+                //     <div class="modal-content p-0">
+                //         <div class="modal-body d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
+                //             ${msg}
+                //             <button type="button" class="btn btn-secondary container-fluid rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Cerrar diálogo</button>
+                //         </div>
+                //     </div>
+                // </div>`)
+                // modalCloseBtn = $(modalContent).find('button[data-bs-dismiss="modal"]')
 
-                modal.html(modalContent)
-                modalCloseBtn.on('click', function(e) {
-                        clearTimeout($(this).attr('blx-timeout'))
-                    })
-                    .attr('blx-timeout', setTimeout(function() {
-                        modalCloseBtn.click()
-                    }, config.modalAutoCloseDelay))
+                // modal.html(modalContent)
+                // modalCloseBtn.on('click', function(e) {
+                //         clearTimeout($(this).attr('blx-timeout'))
+                //     })
+                //     .attr('blx-timeout', setTimeout(function() {
+                //         modalCloseBtn.click()
+                //     }, config.modalAutoCloseDelay))
             }
 
             function saveJournalFile() {
-                let content = []
-                let modal = $('#modal')
-                let modalBtn = $('#modal-btn')
-                let fontSize = '0.85rem'
-                let defName = 'Jornada Laboral'
-                let modalContent, modalConfirmBtn, modalInput
+                // let content = []
+                // let modal = $('#modal')
+                // let modalBtn = $('#modal-btn')
+                // let fontSize = '0.85rem'
+                // let defName = 'Jornada Laboral'
+                // let modalContent, modalConfirmBtn, modalInput
 
-                modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
-                    <div class="modal-content p-0">
-                        <div class="modal-body d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
-                            <div class="form-floating">
-                                <input type="text" class="form-control border-0" id="saveJournalFileFilename" value="${defName}" placeholder="${defName}">
-                                <label for="saveJournalFileFilename">Nombre del archivo</label>
-                            </div>
-                            <div class="container-fluid d-flex gap-2 p-0">
-                                <button id="cancel" type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Cancelar</button>
-                                <button id="confirm" type="button" class="btn btn-success container-fluid rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Confirmar</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>`)
-                modalInput = $(modalContent).find('#saveJournalFileFilename')
-                modalConfirmBtn = $(modalContent).find('#confirm')
+                // modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
+                //     <div class="modal-content p-0">
+                //         <div class="modal-body d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
+                //             <div class="form-floating">
+                //                 <input type="text" class="form-control border-0" id="saveJournalFileFilename" value="${defName}" placeholder="${defName}">
+                //                 <label for="saveJournalFileFilename">Nombre del archivo</label>
+                //             </div>
+                //             <div class="container-fluid d-flex gap-2 p-0">
+                //                 <button id="cancel" type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Cancelar</button>
+                //                 <button id="confirm" type="button" class="btn btn-success container-fluid rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Confirmar</button>
+                //             </div>
+                //         </div>
+                //     </div>
+                // </div>`)
+                // modalInput = $(modalContent).find('#saveJournalFileFilename')
+                // modalConfirmBtn = $(modalContent).find('#confirm')
 
-                modal.html(modalContent)
-                modalBtn.click()
+                // modal.html(modalContent)
+                new Alert('Función deshabilitada por el momento!', 5000) // #DEV#
 
-                modalConfirmBtn.on('click', function(e) {
-                    if (!modalInput.val().trim()) modalInput.val(defName)
+                // modalConfirmBtn.on('click', function(e) {
+                //     if (!modalInput.val().trim()) modalInput.val(defName)
 
-                    if ($('[blx-day]').length) {
-                        for (let el of $('[blx-day]').get()) {
-                            content.push(`${$(el).attr('blx-journal')}`)
-                        }
-                    }
+                //     if ($('[blx-day]').length) {
+                //         for (let el of $('[blx-day]').get()) {
+                //             content.push(`${$(el).attr('blx-journal')}`)
+                //         }
+                //     }
 
-                    saveFile(`${modalInput.val().trim()}.txt`, JSON.stringify(content))
-                })
-                modalInput.on('input focus focuslost keypress', function(e) {
-                    if (e.type == 'keypress' && e.key == 'Enter') return modalConfirmBtn.click()
+                //     saveFile(`${modalInput.val().trim()}.txt`, JSON.stringify(content))
+                // })
+                // modalInput.on('input focus focuslost keypress', function(e) {
+                //     if (e.type == 'keypress' && e.key == 'Enter') return modalConfirmBtn.click()
 
-                    if (!modalInput.val().trim()) {
-                        modalConfirmBtn.text('Confirmar (nombre por defecto)')
-                    } else {
-                        modalConfirmBtn.text('Confirmar (nombre ingresado)')
-                    }
-                })
-                modal.one('focus', function(e) {
-                    modalInput.focus().select()
-                })
+                //     if (!modalInput.val().trim()) {
+                //         modalConfirmBtn.text('Confirmar (nombre por defecto)')
+                //     } else {
+                //         modalConfirmBtn.text('Confirmar (nombre ingresado)')
+                //     }
+                // })
+                // modal.one('focus', function(e) {
+                //     modalInput.focus().select()
+                // })
             }
 
         // Update events
             function updateDayInputBtn() {
-                let i1 = $('#day-input input.from').attr('blx-valid')
-                let i2 = $('#day-input input.to').attr('blx-valid')
+                let i1 = $('#day-input input.from').is(':valid')
+                let i2 = $('#day-input input.to').is(':valid')
                 let btn = $('#day-input button')
 
                 switch (`${i1}:${i2}`) {
@@ -755,7 +732,8 @@
                 // Details
                 detailsEl.html(`<span class="text-secondary-emphasis">${journal.hours.normal}hrs norm</span> <span class="text-secondary">x</span> <span class="text-secondary-emphasis">$${config.normalHourPrice} c/u</span> <span class="text-secondary">=</span> <span class="text-secondary-emphasis">$${journal.summary.normal}</span><br>
                 <span class="text-secondary-emphasis">${journal.hours.nocturnal}hrs noct</span> <span class="text-secondary">x</span> <span class="text-secondary-emphasis">$${config.nocturnalHourPrice} c/u</span> <span class="text-secondary">=</span> <span class="text-secondary-emphasis">$${journal.summary.nocturnal}</span><br>
-                <span class="text-secondary-emphasis">${journal.hours.extra}hrs extr</span> <span class="text-secondary">x</span> <span class="text-secondary-emphasis">$${config.normalHourPrice * config.extraHourMultiplier} c/u</span> <span class="text-secondary">=</span> <span class="text-secondary-emphasis">$${journal.summary.extra}</span><br>
+                <span class="text-secondary-emphasis">${journal.hours.normalExtra}hrs extr norm</span> <span class="text-secondary">x</span> <span class="text-secondary-emphasis">$${config.normalHourPrice * config.extraHourMultiplier} c/u</span> <span class="text-secondary">=</span> <span class="text-secondary-emphasis">$${journal.summary.normalExtra}</span><br>
+                <span class="text-secondary-emphasis">${journal.hours.nocturnalExtra}hrs extr noct</span> <span class="text-secondary">x</span> <span class="text-secondary-emphasis">$${config.nocturnalHourPrice * config.extraHourMultiplier} c/u</span> <span class="text-secondary">=</span> <span class="text-secondary-emphasis">$${journal.summary.nocturnalExtra}</span><br>
                 <br>
                 <span class="text-success-emphasis">${journal.hours.total}hrs totales trabajadas</span><br>
                 <span class="text-success-emphasis">$${journal.summary.total} totales generados</span>`)
@@ -834,9 +812,9 @@
             }
         })
 
-        $(document).on({
+        $(document.body).on({
             'selectionchange': function(e) {
-                if (e.target.tagName != 'INPUT') {
+                if (typeof e.target?.tagName == 'string' && e.target.tagName != 'INPUT') {
                     e.preventDefault()
                     document.getSelection().removeAllRanges()
                 }
@@ -849,23 +827,15 @@
                     const el = $(this)
                     const value = String(el.val())
 
-                    if (value.length) {
-                        el.attr('blx-valid', isValid(value))
-                    } else {
-                        el.removeAttr('blx-valid')
-                    }
-
                     updateDayInputBtn()
 
-                    if (e.type == 'focusout' && value) {
+                    if (e.type == 'focusout' && el.is(':valid')) {
                         el.val(parseArrTime(parseStringTime(value))).trigger('input')
-                    } else if (e.type == 'focus') {
+                    } else if (e.type == 'focus' && value) {
                         el.select()
                     }
                 },
                 'keyup': function(e) {
-                    e.preventDefault()
-
                     const el = $(this)
                     const parent= el.parent()
 
@@ -928,15 +898,11 @@
             $('#navbar #help').on('click', function(e) {
                 e.preventDefault()
 
-                let modal = $('#modal')
-                let modalBtn = $('#modal-btn')
                 let fontSize = '0.75rem'
-                let modalContent
-
-                modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
-                    <div class="modal-content p-0">
-                        <div class="modal-body d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
-                            <p class="text-start">
+                const modal = new Modal(
+                    null,
+                    `<div class="container-fluid d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
+                        <span class="text-start" style="font-size: ${fontSize};">
                             · Puedes agregar un día de la jornada a la lista en la parte superior<br>
                             · Puedes guardar, cargar los días de la lista con los primeros 2 botones de abajo<br>
                             · Puedes recuperar los días borrados de la lista con el tercer botón de abajo<br>
@@ -948,14 +914,14 @@
                             · Puedes ver un resumen de la jornada tocando el apartado de los totales en la parte de abajo<br>
                             <br>
                             <span class="text-warning-emphasis">(los días feriados tendran un color de tonalidad azúl)</span>
-                            </p>
-                            <button type="button" class="btn btn-secondary container-fluid rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Cerrar díalogo</button>
-                        </div>
-                    </div>
-                </div>`)
-
-                modal.html(modalContent)
-                modalBtn.click()
+                        </span>
+                    </div>`,
+                    `<div class="container-fluid p-2 font-monospace">
+                        <button blx-class-modal-event="safeRemove" type="button" class="btn btn-secondary container-fluid rounded-3" style="font-size: ${fontSize};">Salir</button>
+                    </div>`
+                )
+                
+                modal.open()
             })
 
             $('#navbar #config').on({
@@ -964,127 +930,118 @@
 
                     updateConfigData()
 
-                    let modal = $('#modal')
-                    let modalBtn = $('#modal-btn')
-                    let fontSize = '0.75rem'
-                    let modalContent, dismissBtn, cancelBtn, confirmBtn, configInputs
+                    const fontSize = '0.75rem'
+                    const modal = new Modal(
+                        `<div class="container-fluid p-2 font-monospace">
+                            <h4>Configuraciones</h4>
+                        </div>`,
+                        `<div class="container-fluid d-flex flex-column p-2 py-0 gap-2 font-monospace">
+                            <div class="container-fluid d-flex flex-column p-2 bg-white rounded-3" style="--bs-bg-opacity: .03;">
+                                <h6 class="p-0 m-0">Salario y descuentos</h6>
+                                <hr class="p-0 my-0 mb-2">
+                                <div class="container-fluid d-flex flex-column p-0 gap-2">
+                                    <div class="form-floating border-0 p-0">
+                                        <input blx-config-input type="text" pattern="^[0-9]+${config.maxDecimalDigits >= 0 ? (config.maxDecimalDigits > 0 ? `(\\.[0-9]{1,${config.maxDecimalDigits}})?` : '') : '(\\.[0-9]+)?'}$" required class="blx-group-numbers form-control border-0" blx-target="normalHourPrice">
+                                        <label>Hora normal</label>
+                                    </div>
+                                    <div class="form-floating border-0 p-0">
+                                        <input blx-config-input type="text" pattern="^[0-9]+${config.maxDecimalDigits >= 0 ? (config.maxDecimalDigits > 0 ? `(\\.[0-9]{1,${config.maxDecimalDigits}})?` : '') : '(\\.[0-9]+)?'}$" required class="blx-group-numbers form-control border-0" blx-target="nocturnalHourPrice">
+                                        <label>Hora nocturna</label>
+                                    </div>
+                                    <div class="form-floating border-0 p-0">
+                                        <input blx-config-input type="text" pattern="^([0-9]{1,2}${config.maxDecimalDigits >= 0 ? (config.maxDecimalDigits > 0 ? `(\\.[0-9]{1,${config.maxDecimalDigits}})?` : '') : '(\\.[0-9]+)?'})|100$" required class="blx-group-numbers form-control border-0" blx-target="totalDiscount">
+                                        <label>Descuento total</label>
+                                    </div>
+                                    <div class="form-floating border-0 p-0">
+                                        <input blx-config-input type="text" pattern="^[1-9]([0-9]+)?(\\.[0-9]+)?$" required class="form-control border-0" blx-target="extraHourMultiplier">
+                                        <label>Multiplicador de horas extras</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="container-fluid d-flex flex-column p-2 bg-white rounded-3" style="--bs-bg-opacity: .03;">
+                                <h6 class="p-0 m-0">Horario nocturno</h6>
+                                <hr class="p-0 my-0 mb-2">
+                                <div class="container-fluid d-flex flex-column p-0 gap-2">
+                                    <div class="form-floating border-0 p-0">
+                                        <input blx-config-input type="text" pattern="^(([01]?[0-9])|(2[0-4]))(:[0-5]?[0-9])?$" required class="blx-group-time form-control border-0" blx-target="nocturnalTimeStart">
+                                        <label>Inicio</label>
+                                    </div>
+                                    <div class="form-floating border-0 p-0">
+                                        <input blx-config-input type="text" pattern="^(([01]?[0-9])|(2[0-4]))(:[0-5]?[0-9])?$" required class="blx-group-time form-control border-0" blx-target="nocturnalTimeEnd">
+                                        <label>Final</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="container-fluid d-flex flex-column p-2 bg-white rounded-3" style="--bs-bg-opacity: .03;">
+                                <h6 class="p-0 m-0">Delays en milisegundos</h6>
+                                <hr class="p-0 my-0 mb-2">
+                                <div class="container-fluid d-flex flex-column p-0 gap-2">
+                                    <div class="form-floating border-0 p-0">
+                                        <input blx-config-input type="text" pattern="[1-9]([0-9]+)?$" required class="form-control border-0" blx-target="modalAutoCloseDelay">
+                                        <label>Para cerrar automáticamente los dialogos</label>
+                                    </div>
+                                    <div class="form-floating border-0 p-0">
+                                        <input blx-config-input type="text" pattern="^[1-9]([0-9]+)?$" required class="form-control border-0" blx-target="enableConfirmButtonDelay">
+                                        <label>Para activar el botón de confirmación</label>
+                                    </div>${!adminMode ? '' : `
+                                    <div class="form-floating border-0 p-0">
+                                        <input blx-config-input type="text" pattern="^[1-9]([0-9]+)?$" required class="form-control border-0" blx-target="dayInputDelay">
+                                        <label>Para permitir añadir un registro de jornada</label>
+                                    </div>`}${!adminMode ? '' : `
+                                    <div class="form-floating border-0 p-0">
+                                        <input blx-config-input type="text" pattern="^[1-9]([0-9]+)?" minlength="1" class="form-control border-0" blx-target="fileLoadCheckDelay">
+                                        <label>Para verificar la subida de archivos</label>
+                                    </div>`}
+                                </div>
+                            </div>${!adminMode ? '' : `
+                            <div class="container-fluid d-flex flex-column p-2 bg-white rounded-3" style="--bs-bg-opacity: .03;">
+                                <h6 class="p-0 m-0">Otros</h6>
+                                <hr class="p-0 my-0 mb-2">
+                                <div class="container-fluid d-flex flex-column p-0 gap-2">
+                                    <div class="form-floating border-0 p-0">
+                                        <input blx-config-input type="text" pattern="^-1|([0-9]+)$" required class="form-control border-0" blx-target="maxDecimalDigits">
+                                        <label>Cant. maxima de dígitos decimales (-1 = inf)</label>
+                                    </div>
+                                </div>
+                            </div>
+                            `}
+                        </div>`,
+                        `<div class="container-fluid d-flex gap-2 p-2 font-monospace">
+                            <button id="exitBtn" type="button" class="btn btn-secondary flex-grow-1 rounded-3" style="font-size: ${fontSize};">Salir</button>
+                            <button id="confirmBtn" type="button" class="btn btn-success flex-grow-1 rounded-3 disabled" style="font-size: ${fontSize};">Guardar cambios</button>
+                        </div>`
+                    )
+                    let exitBtn, confirmBtn, configInputs
 
-                    modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
-                        <div class="modal-content p-0 pt-2">
-                            <div class="modal-header p-2 font-monospace border-0">
-                                <h4>Configuraciones</h4>
-                            </div>
-                            <div class="modal-body d-flex flex-column p-2 py-0 gap-2 font-monospace">
-                                <div class="container-fluid d-flex flex-column p-2 bg-white rounded-3" style="--bs-bg-opacity: .03;">
-                                    <h6 class="p-0 m-0">Salario y descuentos</h6>
-                                    <hr class="p-0 my-0 mb-2">
-                                    <div class="container-fluid d-flex flex-column p-0 gap-2">
-                                        <div class="form-floating border-0 p-0">
-                                            <input blx-config-input type="text" pattern="[0-9]+${config.maxDecimalDigits >= 0 ? (config.maxDecimalDigits > 0 ? `(\\.[0-9]{1,${config.maxDecimalDigits}})?` : '') : '(\\.[0-9]+)?'}" required class="blx-group-numbers form-control border-0" blx-target="normalHourPrice">
-                                            <label>Hora normal</label>
-                                        </div>
-                                        <div class="form-floating border-0 p-0">
-                                            <input blx-config-input type="text" pattern="[0-9]+${config.maxDecimalDigits >= 0 ? (config.maxDecimalDigits > 0 ? `(\\.[0-9]{1,${config.maxDecimalDigits}})?` : '') : '(\\.[0-9]+)?'}" required class="blx-group-numbers form-control border-0" blx-target="nocturnalHourPrice">
-                                            <label>Hora nocturna</label>
-                                        </div>
-                                        <div class="form-floating border-0 p-0">
-                                            <input blx-config-input type="text" pattern="([0-9]{1,2}${config.maxDecimalDigits >= 0 ? (config.maxDecimalDigits > 0 ? `(\\.[0-9]{1,${config.maxDecimalDigits}})?` : '') : '(\\.[0-9]+)?'})|100" required class="blx-group-numbers form-control border-0" blx-target="totalDiscount">
-                                            <label>Descuento total</label>
-                                        </div>
-                                        <div class="form-floating border-0 p-0">
-                                            <input blx-config-input type="text" pattern="[1-9]([0-9]+)?(\\.[0-9]+)?" required class="form-control border-0" blx-target="extraHourMultiplier">
-                                            <label>Multiplicador de horas extras</label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="container-fluid d-flex flex-column p-2 bg-white rounded-3" style="--bs-bg-opacity: .03;">
-                                    <h6 class="p-0 m-0">Horario nocturno</h6>
-                                    <hr class="p-0 my-0 mb-2">
-                                    <div class="container-fluid d-flex flex-column p-0 gap-2">
-                                        <div class="form-floating border-0 p-0">
-                                            <input blx-config-input type="text" pattern="(([01]?[0-9])|(2[0-4]))\:[0-5]?[0-9]" required class="blx-group-time form-control border-0" blx-target="nocturnalTimeStart">
-                                            <label>Inicio</label>
-                                        </div>
-                                        <div class="form-floating border-0 p-0">
-                                            <input blx-config-input type="text" pattern="(([01]?[0-9])|(2[0-4]))\:[0-5]?[0-9]" required class="blx-group-time form-control border-0" blx-target="nocturnalTimeEnd">
-                                            <label>Final</label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="container-fluid d-flex flex-column p-2 bg-white rounded-3" style="--bs-bg-opacity: .03;">
-                                    <h6 class="p-0 m-0">Delays en milisegundos</h6>
-                                    <hr class="p-0 my-0 mb-2">
-                                    <div class="container-fluid d-flex flex-column p-0 gap-2">
-                                        <div class="form-floating border-0 p-0">
-                                            <input blx-config-input type="text" pattern="[1-9]([0-9]+)?" required class="form-control border-0" blx-target="modalAutoCloseDelay">
-                                            <label>Para cerrar automáticamnte los dialogos</label>
-                                        </div>
-                                        <div class="form-floating border-0 p-0">
-                                            <input blx-config-input type="text" pattern="[1-9]([0-9]+)?" required class="form-control border-0" blx-target="enableConfirmButtonDelay">
-                                            <label>Para activar el botón de confirmación</label>
-                                        </div>${!adminMode ? '' : `
-                                        <div class="form-floating border-0 p-0">
-                                            <input blx-config-input type="text" pattern="[1-9]([0-9]+)?" required class="form-control border-0" blx-target="dayInputDelay">
-                                            <label>Para permitir añadir un registro de jornada</label>
-                                        </div>`}${!adminMode ? '' : `
-                                        <div class="form-floating border-0 p-0">
-                                            <input blx-config-input type="text" pattern="[1-9]([0-9]+)?" minlength="1" class="form-control border-0" blx-target="fileLoadCheckDelay">
-                                            <label>Para verificar la subida de archivos</label>
-                                        </div>`}
-                                    </div>
-                                </div>${!adminMode ? '' : `
-                                <div class="container-fluid d-flex flex-column p-2 bg-white rounded-3" style="--bs-bg-opacity: .03;">
-                                    <h6 class="p-0 m-0">Otros</h6>
-                                    <hr class="p-0 my-0 mb-2">
-                                    <div class="container-fluid d-flex flex-column p-0 gap-2">
-                                        <div class="form-floating border-0 p-0">
-                                            <input blx-config-input type="text" pattern="\-1|([0-9]+)" required class="form-control border-0" blx-target="maxDecimalDigits">
-                                            <label>Cant. maxima de dígitos decimales (-1 = inf)</label>
-                                        </div>
-                                    </div>
-                                </div>
-                                `}
-                            </div>
-                            <div class="modal-footer container-fluid d-flex gap-0 p-2 font-monospace border-0">
-                                <button id="cancelBtn" type="button" class="btn btn-secondary flex-grow-1 rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Salir</button>
-                                <button id="confirmBtn" type="button" class="btn btn-success flex-grow-1 rounded-3 disabled" data-bs-dismiss="modal" style="font-size: ${fontSize};">Guardar cambios</button>
-                            </div>
-                        </div>
-                    </div>`)
-                    dismissBtn = $(modalContent).find('button#dismissBtn')
-                    cancelBtn = $(modalContent).find('button#cancelBtn')
-                    confirmBtn = $(modalContent).find('button#confirmBtn')
-                    configInputs = $(modalContent).find('[blx-config-input]')
+                    exitBtn = modal.get().find('button#exitBtn')
+                    confirmBtn = modal.get().find('button#confirmBtn')
+                    configInputs = modal.get().find('[blx-config-input]')
 
                     confirmBtn.on('click', function(e) {
                         const el = $(this)
 
                         if (!el.hasClass('disabled')) {
-                            const modal = elFomStr(`<div id="sub-modal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" >
-                                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
-                                    <div class="modal-content p-0 pt-2">
-                                        <div class="modal-body p-2 font-monospace">
-                                            ¿Estas seguro de modificar las configuraciones?
-                                        </div>
-                                        <div class="modal-footer container-fluid d-flex gap-0 p-2 font-monospace border-0">
-                                            <button id="cancelBtn" type="button" class="btn btn-secondary flex-grow-1 rounded-3" style="font-size: ${fontSize};">No</button>
-                                            <button id="confirmBtn" type="button" class="btn btn-success flex-grow-1 rounded-3 disabled" data-bs-dismiss="modal" style="font-size: ${fontSize};">Si (${config.enableConfirmButtonDelay / 1000}s)</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>`)
-                            const modalBtn = elFomStr(`<button type="button" data-bs-toggle="modal" data-bs-target="#sub-modal" style="display: none !important;"></button>`)
-                            const cancelBtn = $(modal).find('button#cancelBtn')
-                            const confirmBtn = $(modal).find('button#confirmBtn')
+                            const el = $(this)
+                            const subModal = new Modal(
+                                null,
+                                `<div class="container-fluid p-2 font-monospace">
+                                    ¿Estas seguro de modificar las configuraciones?
+                                </div>`,
+                                `<div class="container-fluid d-flex gap-2 p-2 font-monospace">
+                                    <button id="noBtn" type="button" class="btn btn-secondary flex-grow-1 rounded-3" style="font-size: ${fontSize};">No</button>
+                                    <button id="yesBtn" type="button" class="btn btn-success flex-grow-1 rounded-3 disabled" style="font-size: ${fontSize};">Si (${config.enableConfirmButtonDelay / 1000}s)</button>
+                                </div>`
+                            )
+                            const noBtn = subModal.get().find('button#noBtn')
+                            const yesBtn = subModal.get().find('button#yesBtn')
                             const timeoutId = setTimeout(() => {
-                                confirmBtn.removeClass('disabled').text('Si')
+                                yesBtn.removeClass('disabled').text('Si')
                             }, config.enableConfirmButtonDelay)
 
-                            cancelBtn.on('click', () => { if (!$(this).hasClass('disabled')) exit() })
-                            confirmBtn.on('click', () => { if (!$(this).hasClass('disabled')) exit(true) })
-
-                            document.body.append(modalBtn, modal)
-                            modalBtn.click()
+                            noBtn.on('click', () => { if (!$(this).hasClass('disabled')) exit() })
+                            yesBtn.on('click', () => { if (!$(this).hasClass('disabled')) exit(true) })
+                            
+                            subModal.open()
 
                             // method
                             function exit(isConfirm) {
@@ -1102,62 +1059,52 @@
                                     updateConfigData()
                                     updateSummaryData()
 
-                                    console.log(dismissBtn)
-                                } else {
+                                    modal.safeRemove()
 
-                                    $('#modal-btn').click()
+                                    new Alert('Se actualizaron las configuraciones!')
                                 }
 
-                                setTimeout(() => {
-                                    modalBtn.remove()
-                                    modal.remove()
-                                }, 50)
+                                subModal.safeRemove()
                             }
                         }
                     })
 
-                    cancelBtn.on('click', function(e) {
+                    exitBtn.on('click', function(e) {   
                         if (!confirmBtn.hasClass('disabled')) {
                             const el = $(this)
-                            const modal = elFomStr(`<div id="sub-modal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" >
-                                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
-                                    <div class="modal-content p-0 pt-2">
-                                        <div class="modal-body p-2 font-monospace">
-                                            ¿Estas seguro de querer salir? (tienes cambios sin guardar)
-                                        </div>
-                                        <div class="modal-footer container-fluid d-flex gap-0 p-2 font-monospace border-0">
-                                            <button id="cancelBtn" type="button" class="btn btn-secondary flex-grow-1 rounded-3" style="font-size: ${fontSize};">No</button>
-                                            <button id="confirmBtn" type="button" class="btn btn-success flex-grow-1 rounded-3 disabled" data-bs-dismiss="modal" style="font-size: ${fontSize};">Si (${config.enableConfirmButtonDelay / 1000}s)</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>`)
-                            const modalBtn = elFomStr(`<button type="button" data-bs-toggle="modal" data-bs-target="#sub-modal" style="display: none !important;"></button>`)
-                            const cancelBtn = $(modal).find('button#cancelBtn')
-                            const confirmBtn = $(modal).find('button#confirmBtn')
+                            const subModal = new Modal(
+                                null,
+                                `<div class="container-fluid p-2 font-monospace">
+                                    ¿Estas seguro de querer salir? (tienes cambios sin guardar)
+                                </div>`,
+                                `<div class="container-fluid d-flex gap-2 p-2 font-monospace">
+                                    <button id="noBtn" type="button" class="btn btn-secondary flex-grow-1 rounded-3" style="font-size: ${fontSize};">No</button>
+                                    <button id="yesBtn" type="button" class="btn btn-success flex-grow-1 rounded-3 disabled" style="font-size: ${fontSize};">Si (${config.enableConfirmButtonDelay / 1000}s)</button>
+                                </div>`
+                            )
+                            const noBtn = subModal.get().find('button#noBtn')
+                            const yesBtn = subModal.get().find('button#yesBtn')
                             const timeoutId = setTimeout(() => {
-                                confirmBtn.removeClass('disabled').text('Si')
+                                yesBtn.removeClass('disabled').text('Si')
                             }, config.enableConfirmButtonDelay)
 
-                            cancelBtn.on('click', () => { if (!$(this).hasClass('disabled')) exit() })
-                            confirmBtn.on('click', () => { if (!$(this).hasClass('disabled')) exit(true) })
-
-                            document.body.append(modalBtn, modal)
-                            modalBtn.click()
+                            noBtn.on('click', () => { if (!$(this).hasClass('disabled')) exit() })
+                            yesBtn.on('click', () => { if (!$(this).hasClass('disabled')) exit(true) })
+                            
+                            subModal.open()
 
                             // method
                             function exit(isConfirm) {
                                 clearTimeout(timeoutId)
 
-                                if (!isConfirm) {
-                                    $('#modal-btn').click()
+                                if (isConfirm) {
+                                    modal.safeRemove()
                                 }
 
-                                setTimeout(() => {
-                                    modalBtn.remove()
-                                    modal.remove()
-                                }, 50)
+                                subModal.safeRemove()
                             }
+                        } else {
+                            modal.safeRemove()
                         }
                     })
 
@@ -1229,12 +1176,7 @@
                         }
                     }).trigger('blx-init')
 
-                    $(modalContent).find('.modal-footer button').on('click', function(e) {
-                        $(modalContent).find('[blx-config-input]').off()
-                    })
-
-                    modal.html(modalContent)
-                    modalBtn.click()
+                    modal.open()
 
                     // metodos utiles
                     function modificarLlave(objeto, llave, valor) {
@@ -1279,7 +1221,7 @@
                     if (count >= 5 && !adminMode) {
                         adminMode = true
 
-                        alert('Admin mode ON')
+                        new Alert('Modo <code>administrador</code> activado!', 3000)
                     }
                 },
                 'focusout click': function() {
@@ -1291,10 +1233,161 @@
             // Menu de configuración, hacerlo dentro de un modal con 2 botones abajo que sean (Salir) y (Guardar)
             // Si le das a (Salir) y existen cambios que te diga si estas seguro pq tienes cambios sin guardar
 
+   
+        // Classes <-----------------------------------------------------------------------------------
+        class Alert {
+
+            /** @param {String} message */
+            constructor(message, autoCloseDelay) {
+                const m = new Modal(
+                    `<div class="container-fluid d-flex align-items-center justify-content-between gap-2 p-2">
+                        <span class="font-monospace" style="font-size: 0.75rem;">${message}</span>
+                        {{replace:[removeBtn]}}
+                    </div>`,
+                    null, null
+                )
+
+                m.open()
+
+                if (autoCloseDelay) {
+                    setTimeout(() => {
+                        m.safeRemove()
+                    }, autoCloseDelay)
+                }
+            }
+        }
+
+        class Modal {
+            /** @type {Number} */ static count = 0
+            /** @type {Number} */ id
+
+            
+            /** @param {String} header @param {String} content @param {String} footer */
+            constructor(header, content, footer) {
+                this.id = Modal.count++
+
+                let modalStr = `
+                    <div class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" blx-modal-target="modal" blx-modal="${this.id}">
+                        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3">
+                            <div class="modal-content p-0">
+                                ${!header ? '' :
+                                `<div class="modal-header border-0 p-0">
+                                    ${header}
+                                </div>`
+                                }
+                                ${!content ? '' :
+                                `<div class="modal-body border-0 p-0">
+                                    ${content}
+                                </div>`
+                                }
+                                ${!footer ? '' :
+                                `<div class="modal-footer border-0 p-0">
+                                    ${footer}
+                                </div>`
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `.trim()
+
+                while (modalStr.indexOf('{{replace:[removeBtn]}}') != -1) {
+                    modalStr = modalStr.replace('{{replace:[removeBtn]}}', '<button blx-class-modal-event="safeRemove" type="button" class="btn-close" aria-label="Close"></button>')
+                }
+
+                let buttons = [
+                    elFomStr(`<button class="d-none" type="button" data-bs-toggle="modal" blx-modal-target="toggleBtn" blx-modal="${this.id}" data-bs-target="[blx-modal='${this.id}']" ></button>`),
+                    elFomStr(`<button class="d-none" type="button" data-bs-dismiss="modal" blx-modal-target="closeBtn" blx-modal="${this.id}" data-bs-target="[blx-modal='${this.id}']" ></button>`)
+                ]
+                let modal = elFomStr(modalStr)
+
+                document.body.append(modal, ...buttons)
+
+                // Events
+                $(modal).find('[blx-class-modal-event="safeRemove"]').on('click', (e) => {
+                    this.safeRemove()
+                })
+                
+                $(modal).find('[blx-class-modal-event="remove"]').on('click', (e) => {
+                    this.remove()
+                })
+                
+                $(modal).find('[blx-class-modal-event="open"]').on('click', (e) => {
+                    this.open()
+                })
+                
+                $(modal).find('[blx-class-modal-event="close"]').on('click', (e) => {
+                    this.close()
+                })
+                
+                $(modal).find('[blx-class-modal-event="toggle"]').on('click', (e) => {
+                    this.toggle()
+                })
+            }
+
+            /** @returns {JQuery} */
+            get() {
+                return $(`[blx-modal="${this.id}"][blx-modal-target="modal"]`)
+            }
+
+            /** @returns {HTMLElement} */
+            getEl() {
+                return this.get().get(0)
+            }
+
+            toggle() {
+                const modals = $(`[blx-modal][blx-modal-target="modal"]`)
+
+                modals.one('hide.bs.modal.blx', function(e) {
+                    e.preventDefault()
+                })
+
+                this.get().one('shown.bs.modal', () => {
+                    modals.off('hide.bs.modal.blx')
+                })
+
+                $(`[blx-modal="${this.id}"][blx-modal-target="toggleBtn"]`).click()
+            }
+
+            close() {
+                $(`[blx-modal="${this.id}"][blx-modal-target="closeBtn"]`).click()
+            }
+
+            open() {
+                if (!this.get().hasClass('show')) {
+                    this.toggle()
+                }
+            }
+
+            safeRemove() {
+                if (this.get().hasClass('show')) {
+                    this.close()
+                    this.get().one('hidden.bs.modal', () => {
+                        this.safeRemove()
+                    })
+                } else {
+                    this.remove()
+                }
+            }
+
+            remove() {
+                Modal.removeModal(this.id)
+            }
+
+            /** @param {JQuery | Number | any} input */
+            static removeModal(input) {
+                let id = input
+                
+                if (typeof input != 'number') {
+                    id = $(input).attr('blx-modal')
+                }
+
+                $(`[blx-modal="${id}"][blx-modal-target="closeBtn"]`).click()
+                $(`[blx-modal="${id}"]`).remove()
+            }
+        }
      </script>
 </body>
 </html>
 
 
-<!-- Search for #TODO# (por hacer) -->
-<!-- Search for #TEMP# (tempora) -->
+<!-- Search for: #DEV# -->
