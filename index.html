@@ -131,6 +131,7 @@
             nocturnalTimeStart: '22:00', // Editable by User
             nocturnalTimeEnd: '06:00', // Editable by User
             extraHourMultiplier: 2, // Editable by User
+            _fileName: 'Jornada Laboral',
         }
         const deletedDays = []
         let unsavedChanges = false
@@ -164,7 +165,7 @@
                 return el.firstChild
             }
 
-            function loadFile(file) {
+            function loadFile(modal) {
                 let el = elFomStr(`<input id="load-file" type="file" accept=".txt" multiple="false" style="display: none;">`)
 
                 document.body.append(el)
@@ -180,31 +181,37 @@
                     clearTimeout($(el).attr('blx-window-focused'))
 
                     try {
-                        if (!el.files.length) return loadJournalFile(false, 'No se pudo cargar el archivo de la jornada debido a que no se subio tal archivo')
+                        if (!el.files.length) {
+                            el.remove()
+                            return loadJournalFile(modal, 'No se pudo cargar el archivo de la jornada debido a que no se subio tal archivo')
+                        }
                         
                         let file = el.files[0]
                         let reader = new FileReader()
 
                         reader.onload = function (evt) {
-                            loadJournalFile(false, null, evt.target.result)
+                            el.remove()
+                            loadJournalFile(modal, null, evt.target.result)
                         }
 
                         reader.readAsText(file, 'UTF-8')
                     } catch (err) {
-                        loadJournalFile(false, 'No se pudo cargar el archivo de la jornada debido a un error inesperado')
+                        el.remove()
+                        loadJournalFile(modal, 'No se pudo cargar el archivo de la jornada debido a un error inesperado')
                     }
 
-                    el.remove()
                 }
             }
 
             function saveFile(name, content) {
-                let el = elFomStr(`<a href="data:text/plain;charset=utf-8,${encodeURIComponent(content)}" download="${name}" style="display: none;"></a>`)
+                let el = elFomStr(`<a href="data:text/plain;charset=utf-8,${encodeURIComponent(content)}" download="${name}.txt" style="display: none;"></a>`)
                 
                 document.body.append(el)
                 el.click()
                 el.remove()
                 unsavedChanges = false
+
+                new Alert(`Archivo guardado correctamente!`)
             }
 
         // Events specific
@@ -239,7 +246,7 @@
                 let el
                 
                 el = $(elFomStr(`<div blx-day="${elIndex}" blx-journal="${journal.from}-${journal.to}" blx-holiday="${holiday == 'true' ? 'true' : 'false'}" class="day-input container-fluid position-relative p-0 overflow-hidden">
-                    <i id="icon" class="ti ti-trash text-danger p-2 pe-3 fs-3 position-absolute" style="z-index: -1; opacity: 0; top: 50%; left: 0; transition: -100% -50%"></i>
+                    <div id="icon" class="text-danger p-2 px-4 fs-3 position-absolute" style="z-index: -1; opacity: 0; top: 50%; left: 0; transition: -100% -50%"><i class="ti ti-trash pe-1"></i></div>
                     <div id="main" class="container-fluid overflow-hidden bg-black rounded-3 d-flex flex-column p-0" style="--bs-bg-opacity: .2; backdrop-filter: opacity(0);">
                         <div class="container-fluid d-flex p-0">
                             <div class="container-fluid d-flex gap-3 p-2 px-0 ps-3 justify-content-between align-items-center text-center">
@@ -276,7 +283,7 @@
                         const el = $(this)
                         const icon = el.parent().find('#icon')
                         const transition = 'all .1s ease'
-                        const mult = .25
+                        const mult = .35
 
                         if (el.attr('blx-slide') != 'true') return
 
@@ -516,150 +523,153 @@
                 return res
             }
 
-            function loadJournalFile(init, error, res) {
-                // let modal = $('#modal')
-                // let modalBtn = $('#modal-btn')
-                // let fontSize = '0.85rem'
-                // let modalContent, modalCloseBtn, timeOutId, msg, arr
+            function loadJournalFile(modal, error, res) {
+                let fontSize = '0.85rem'
 
-                // if (init == true) {
-                //     modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
-                //         <div class="modal-content p-0">
-                //             <div class="modal-body d-flex flex-column p-2 gap-2 fst-italic font-monospace text-center">
-                //                 Cargando archivo de la jornada...
-                //             </div>
-                //         </div>
-                //     </div>`)
+                if (modal == null) {
+                    if (modal?.remove) modal.remove()
+                    modal = new Modal(
+                        null,
+                        `<div class="container-fluid font-monospace p-2">
+                            <span style="font-size: ${fontSize};">Cargando archivo de la jornada...</span>
+                        </div>`
+                    )
 
-                //     modal.html(modalContent)
-                    new Alert('Función deshabilitada por el momento!', 5000) // #DEV#
+                    modal.open()
                     
-                //     return loadFile()
-                // }
+                    return loadFile(modal)
+                }
 
-                // if (error) {
-                //     msg = error
-                // } else {
-                //     msg = 'El archivo de la jornada fue cargado correctamente'
+                if (error) {
+                    if (modal?.remove) modal.remove()
+                    return new Alert(error, 5000)
+                } else {
+                    try {
+                        const data = JSON.parse(res.trim())
+                        let timeOutId
 
-                //     try {
-                //         arr = JSON.parse(res.trim())
+                        if ($('[blx-day]').length) {
+                            if (modal?.remove) modal.remove()
+                            modal = new Modal(
+                                null,
+                                `<div class="container-fluid font-monospace p-2">
+                                    <span style="font-size: ${fontSize};">Cuidado! Tienes información sin guardar, ¿estas segur@ de que quieres remplazarla?</span>
+                                </div>`,
+                                `<div class="container-fluid d-flex gap-2 p-2">
+                                    <button id="no" type="button" class="btn btn-secondary container-fluid rounded-3" blx-class-modal-event="safeRemove" style="font-size: ${fontSize};">No</button>
+                                    <button id="yes" type="button" class="btn btn-success container-fluid rounded-3 disabled" style="font-size: ${fontSize};">Si (${config.enableConfirmButtonDelay / 1000}s)</button>
+                                </div>`
+                            )
 
-                //         if ($('[blx-day]').length) {
-                //             modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
-                //                 <div class="modal-content p-0">
-                //                     <div class="modal-body d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
-                //                         Cuidado! Ya tienes una jornada con datos creada, ¿estas segur@ de que quieres remplazarla?
-                //                         <div class="container-fluid d-flex gap-2 p-0">
-                //                             <button id="cancel" type="button" class="btn btn-secondary container-fluid rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Cancelar</button>
-                //                             <button id="confirm" type="button" class="btn btn-success container-fluid rounded-3 disabled" data-bs-dismiss="modal" style="font-size: ${fontSize};">Confirmar (${config.enableConfirmButtonDelay / 1000}s)</button>
-                //                         </div>
-                //                     </div>
-                //                 </div>
-                //             </div>`)
-                //             timeOutId = setTimeout(function() {
-                //                 $(modalContent).find('button#confirm').removeClass('disabled').text('Confirmar').one('click', completeLoad)
-                //             }, config.enableConfirmButtonDelay)
+                            timeOutId = setTimeout(function() {
+                                modal.get().find('#yes').removeClass('disabled').text('Si').one('click', completeLoad)
+                            }, config.enableConfirmButtonDelay)
+                            modal.get().find('#no').one('click', function(e) { clearTimeout(timeOutId) })
 
-                //             modal.html(modalContent)
+                            modal.open()
+                        } else {
+                            completeLoad()
+                        }
 
-                //             return $(modalContent).find('button#cancel').one('click', function(e) { clearTimeout(timeOutId) })
-                //         }
+                        // Complete load
+                        function completeLoad() {
+                            if (typeof data?.config != 'object' || Array.isArray(data?.config)) return
+                            if (typeof data?.days != 'object' || !Array.isArray(data?.days)) return
 
-                //         // Complete load
-                //         function completeLoad() {
-                //             $('[blx-day]').remove()
+                            $('[blx-day]').remove()
+                        
+                            for (let el of data.days) {
+                                el = el.split('-')
 
-                //             for (let el of arr) {
-                //                 el = el.split('-')
+                                if (el.length == 2) {
+                                    $('#day-input input.from').val(el[0])
+                                    $('#day-input input.to').val(el[1])
+                                    $('#day-input button').trigger('force-click')
+                                }
+                            }
 
-                //                 if (el.length == 2) {
-                //                     $('#day-input input.from').val(el[0])
-                //                     $('#day-input input.to').val(el[1])
-                //                     $('#day-input button').trigger('force-click')
-                //                 }
-                //             }
+                            for (const key of Object.keys(data.config)) {
+                                config[key] = data.config[key]
+                            }
 
-                //             dayIndex = toNumber($('[blx-day]').last().attr('blx-day'), -1) + 1
-                //         }
+                            dayIndex = toNumber($('[blx-day]').last().attr('blx-day'), -1) + 1
 
-                //         completeLoad()
-
-                //     } catch (err) {
-                //         msg = 'No se pudo cargar el archivo de la jornada debido a que no se pudo leer la información del archivo'
-                //     }
-                // }
-
-                // modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
-                //     <div class="modal-content p-0">
-                //         <div class="modal-body d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
-                //             ${msg}
-                //             <button type="button" class="btn btn-secondary container-fluid rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Cerrar diálogo</button>
-                //         </div>
-                //     </div>
-                // </div>`)
-                // modalCloseBtn = $(modalContent).find('button[data-bs-dismiss="modal"]')
-
-                // modal.html(modalContent)
-                // modalCloseBtn.on('click', function(e) {
-                //         clearTimeout($(this).attr('blx-timeout'))
-                //     })
-                //     .attr('blx-timeout', setTimeout(function() {
-                //         modalCloseBtn.click()
-                //     }, config.modalAutoCloseDelay))
+                            if (modal?.remove) modal.remove()
+                            new Alert('El archivo de la jornada fue cargado correctamente!', 5000)
+                        }
+                    } catch (err) {
+                        if (modal?.remove) modal.remove()
+                        new Alert('No se pudo cargar el archivo de la jornada debido a que no se pudo leer la información del archivo', 5000)
+                    }
+                }
             }
 
             function saveJournalFile() {
-                // let content = []
-                // let modal = $('#modal')
-                // let modalBtn = $('#modal-btn')
-                // let fontSize = '0.85rem'
-                // let defName = 'Jornada Laboral'
-                // let modalContent, modalConfirmBtn, modalInput
+                const days = []
+                const fontSize = '0.75rem'
+                const modal = new Modal(
+                    null,
+                    `<div class="container-fluid d-flex flex-column p-2 gap-2 font-monospace">
+                        <div class="form-floating">
+                            <input pattern="^(([\\S]{1,2})|([\\S]+[\\s\\S]+[\\S]+))$" required type="text" class="form-control border-0" id="saveJournalFileFilename" value="${config._fileName}" placeholder="${config._fileName}">
+                            <label for="saveJournalFileFilename">Nombre del archivo</label>
+                        </div>
+                        <span class="text-warning-emphasis px-3 fst-italic" style="font-size: ${fontSize}; opacity: .6;">Al confirmar se guardaran tu lista de días y tus configuraciones en un archivo con el nombre de arriba</span>
+                    </div>`,
+                    `<div class="container-fluid d-flex gap-2 p-2">
+                        <button type="button" class="btn btn-secondary rounded-3" blx-class-modal-event="safeRemove" style="font-size: ${fontSize};">Salir</button>
+                        <button id="save" type="button" class="btn btn-success container-fluid rounded-3" blx-class-modal-event="safeRemove" style="font-size: ${fontSize};">Guardar</button>
+                    </div>`
+                )
+                const saveBtn = modal.get().find('#save')
+                const input = modal.get().find('input')
 
-                // modalContent = elFomStr(`<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable p-0 rounded-3" style="font-size: ${fontSize};">
-                //     <div class="modal-content p-0">
-                //         <div class="modal-body d-flex flex-column p-2 gap-3 fst-italic font-monospace text-center">
-                //             <div class="form-floating">
-                //                 <input type="text" class="form-control border-0" id="saveJournalFileFilename" value="${defName}" placeholder="${defName}">
-                //                 <label for="saveJournalFileFilename">Nombre del archivo</label>
-                //             </div>
-                //             <div class="container-fluid d-flex gap-2 p-0">
-                //                 <button id="cancel" type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Cancelar</button>
-                //                 <button id="confirm" type="button" class="btn btn-success container-fluid rounded-3" data-bs-dismiss="modal" style="font-size: ${fontSize};">Confirmar</button>
-                //             </div>
-                //         </div>
-                //     </div>
-                // </div>`)
-                // modalInput = $(modalContent).find('#saveJournalFileFilename')
-                // modalConfirmBtn = $(modalContent).find('#confirm')
+                modal.open()
+                modal.get().one('shown.bs.modal', function(e) {
+                    input.focus().val(input.val().trim())
 
-                // modal.html(modalContent)
-                new Alert('Función deshabilitada por el momento!', 5000) // #DEV#
+                    if (input.val()) {
+                        input.select()
+                    }
+                })
 
-                // modalConfirmBtn.on('click', function(e) {
-                //     if (!modalInput.val().trim()) modalInput.val(defName)
+                input.on({
+                    'focusout': function(e) {
+                        if (input.is(':invalid')) {
+                            input.val(input.val().trim())
 
-                //     if ($('[blx-day]').length) {
-                //         for (let el of $('[blx-day]').get()) {
-                //             content.push(`${$(el).attr('blx-journal')}`)
-                //         }
-                //     }
+                            if (input.is(':invalid')) {
+                                input.val(config._fileName)
+                            }
+                        }
 
-                //     saveFile(`${modalInput.val().trim()}.txt`, JSON.stringify(content))
-                // })
-                // modalInput.on('input focus focuslost keypress', function(e) {
-                //     if (e.type == 'keypress' && e.key == 'Enter') return modalConfirmBtn.click()
+                        config._fileName = input.val()
+                    },
+                    'keyup': function(e) {
+                        if (e.key == 'Enter') {
+                            input.blur()
+                            saveBtn.click()
+                        }
+                    }
+                })
 
-                //     if (!modalInput.val().trim()) {
-                //         modalConfirmBtn.text('Confirmar (nombre por defecto)')
-                //     } else {
-                //         modalConfirmBtn.text('Confirmar (nombre ingresado)')
-                //     }
-                // })
-                // modal.one('focus', function(e) {
-                //     modalInput.focus().select()
-                // })
+                saveBtn.on('click', function(e) {
+                    if (input.is(':invalid')) return
+                    
+                    if ($('[blx-day]').length) {
+                        for (let el of $('[blx-day]').get()) {
+                            days.push(`${$(el).attr('blx-journal')}`)
+                        }
+                    }
+
+                    saveFile(
+                        input.val(),
+                        JSON.stringify({
+                            days,
+                            config,
+                        })
+                    )
+                })
             }
 
         // Update events
@@ -803,6 +813,8 @@
                 updateConfigData()
                 updateSummaryData()
                 updateNavbar()
+
+                new Alert('Bienvenido, para añadir un día ve a la parte superior donde dice "de ... a ..." y toca donde los cuadraditos para escribir la hora de entrada/salida<br><br>Una vez escribiendo si le das a la tecla "Enter" se cambia de cuadrado solo, tambíen si estan los 2 cuadrados llenos agrega el día solo sin la necesidad de tocar el boton<br><br>Cierra este díalogo con la "X" de la derecha')
             },
             'beforeunload': function(e) {
                 if (unsavedChanges) {
@@ -881,7 +893,7 @@
             $('#navbar #load').on('click', function(e) {
                 e.preventDefault()
 
-                loadJournalFile(true)
+                loadJournalFile(null)
             })
 
             $('#navbar #undo').on('click', function(e) {
@@ -1240,7 +1252,7 @@
             /** @param {String} message */
             constructor(message, autoCloseDelay) {
                 const m = new Modal(
-                    `<div class="container-fluid d-flex align-items-center justify-content-between gap-2 p-2">
+                    `<div class="container-fluid d-flex align-items-center justify-content-between gap-3 p-2 pe-3">
                         <span class="font-monospace" style="font-size: 0.75rem;">${message}</span>
                         {{replace:[removeBtn]}}
                     </div>`,
